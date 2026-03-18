@@ -16,4 +16,10 @@ interface BypassLogDao {
 
     @Query("SELECT COUNT(*) FROM BypassLog WHERE date = :date")
     suspend fun getBypassCountForDate(date: LocalDate): Int
+
+    @Query("SELECT COUNT(*) FROM BypassLog")
+    suspend fun getTotalBypassCount(): Int
+
+    @Query("SELECT COUNT(*) FROM BypassLog WHERE date >= :start AND date <= :end")
+    suspend fun getBypassCountForRange(start: LocalDate, end: LocalDate): Int
 }

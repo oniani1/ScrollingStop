@@ -94,8 +94,11 @@ class BlockOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
     private val usedSecondsState = mutableIntStateOf(0)
     private val limitSecondsState = mutableIntStateOf(3600)
     private val streakDaysState = mutableIntStateOf(0)
+    private val streakShieldsState = mutableIntStateOf(0)
     private val checkingTradeState = mutableStateOf(false)
     private val tradeCheckResultState = mutableStateOf<String?>(null)
+    private val showCelebrationState = mutableStateOf(false)
+    private val celebrationProfitState = mutableStateOf(0.0)
 
     override val lifecycle: Lifecycle get() = lifecycleRegistry
     override val savedStateRegistry: SavedStateRegistry
@@ -136,10 +139,15 @@ class BlockOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
         scope.launch(Dispatchers.IO) {
             val today = LocalDate.now()
             var streak = 0
+            var shields = prefs.streakShields
             var day = today.minusDays(1) // start from yesterday
             while (true) {
                 val hadTrade = tradeUnlockDao.hasUnlockForDate(day)
                 if (hadTrade) {
+                    streak++
+                    day = day.minusDays(1)
+                } else if (shields > 0) {
+                    shields--
                     streak++
                     day = day.minusDays(1)
                 } else {
@@ -149,6 +157,7 @@ class BlockOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
             // Include today if already unlocked
             if (tradeUnlockDao.hasUnlockForDate(today)) streak++
             streakDaysState.intValue = streak
+            streakShieldsState.intValue = prefs.streakShields
         }
     }
 
@@ -190,6 +199,9 @@ class BlockOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                     usedSeconds = usedSecondsState.intValue,
                     limitSeconds = limitSecondsState.intValue,
                     streakDays = streakDaysState.intValue,
+                    streakShields = streakShieldsState.intValue,
+                    showCelebration = showCelebrationState.value,
+                    celebrationProfit = celebrationProfitState.value,
                     isCheckingTrade = checkingTradeState.value,
                     tradeCheckResult = tradeCheckResultState.value,
                     onBypassConfirmed = { handleBypass() },
@@ -255,7 +267,10 @@ class BlockOverlayService : Service(), LifecycleOwner, SavedStateRegistryOwner {
                 if (result.found) {
                     val profitStr = "$${String.format("%.2f", result.profitUsd)}"
                     tradeCheckResultState.value = "Trade found ($profitStr)! Unlocking..."
-                    delay(1500)
+                    // Trigger celebration
+                    showCelebrationState.value = true
+                    celebrationProfitState.value = result.profitUsd
+                    delay(2500)
                     dismiss(this@BlockOverlayService)
                 } else {
                     tradeCheckResultState.value = result.details.ifEmpty {

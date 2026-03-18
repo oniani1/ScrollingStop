@@ -1,10 +1,18 @@
 package com.scrollingstop.ui.overlay
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +23,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,23 +46,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scrollingstop.ui.theme.AccentOrange
+import com.scrollingstop.ui.theme.GlassBg
+import com.scrollingstop.ui.theme.GlassBorder
+import com.scrollingstop.ui.theme.GlassBorderLight
 import com.scrollingstop.ui.theme.Gray100
 import com.scrollingstop.ui.theme.Gray300
 import com.scrollingstop.ui.theme.Gray400
 import com.scrollingstop.ui.theme.Gray600
-import com.scrollingstop.ui.theme.Gray800
-import com.scrollingstop.ui.theme.Gray900
-import com.scrollingstop.ui.theme.Gray950
+import com.scrollingstop.ui.theme.StatusGreen
+import com.scrollingstop.ui.theme.StatusRed
+import com.scrollingstop.ui.theme.SurfaceCard
 
 @Composable
 fun BlockOverlayContent(
     usedSeconds: Int,
     limitSeconds: Int,
     streakDays: Int,
+    streakShields: Int = 0,
+    showCelebration: Boolean = false,
+    celebrationProfit: Double = 0.0,
     isCheckingTrade: Boolean,
     tradeCheckResult: String?,
     onBypassConfirmed: () -> Unit,
@@ -66,216 +88,358 @@ fun BlockOverlayContent(
     var bypassInput by remember { mutableStateOf("") }
     val usedFormatted = formatDuration(usedSeconds)
 
-    Column(
+    // Pulsing glow animation
+    val infiniteTransition = rememberInfiniteTransition(label = "glow")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.10f,
+        targetValue = 0.20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glowAlpha"
+    )
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Gray950.copy(alpha = 0.97f))
-            .padding(horizontal = 32.dp, vertical = 64.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color(0xFF050505))
+            .drawBehind {
+                // Red/amber urgency vignette
+                drawRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color.Transparent, StatusRed.copy(alpha = glowAlpha)),
+                        center = Offset(size.width / 2, size.height / 2),
+                        radius = size.maxDimension * 0.8f
+                    )
+                )
+                // Lock icon glow
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(AccentOrange.copy(alpha = 0.08f), Color.Transparent),
+                        center = Offset(size.width / 2, size.height * 0.12f),
+                        radius = size.width * 0.4f
+                    ),
+                    radius = size.width * 0.4f,
+                    center = Offset(size.width / 2, size.height * 0.12f)
+                )
+            }
     ) {
-        Spacer(Modifier.height(32.dp))
-
-        // Lock icon
-        Icon(
-            imageVector = Icons.Default.Lock,
-            contentDescription = null,
-            tint = Gray300,
-            modifier = Modifier.size(48.dp)
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "TIME'S UP",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Gray100,
-            letterSpacing = 2.sp
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Text(
-            text = "You've scrolled for $usedFormatted today",
-            fontSize = 16.sp,
-            color = Gray400,
-            textAlign = TextAlign.Center,
-        )
-
-        Spacer(Modifier.height(32.dp))
-
-        // Trade unlock card
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Gray900, RoundedCornerShape(12.dp))
-                .padding(20.dp),
+                .fillMaxSize()
+                .padding(horizontal = 28.dp, vertical = 56.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(Modifier.height(24.dp))
+
+            // Glowing lock icon
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .drawBehind {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(AccentOrange.copy(alpha = 0.25f), Color.Transparent),
+                                radius = size.width
+                            )
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = Gray100,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
+
             Text(
-                text = "MAKE A TRADE TO UNLOCK",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
+                text = "TIME'S UP",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
                 color = Gray100,
-                letterSpacing = 1.sp
+                letterSpacing = 4.sp
             )
+
+            Spacer(Modifier.height(12.dp))
+
+            Text(
+                text = "You've scrolled for $usedFormatted today",
+                fontSize = 16.sp,
+                color = Gray400,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(Modifier.height(32.dp))
+
+            // Trade unlock card — glass-morphism with gradient border
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(GlassBg, RoundedCornerShape(16.dp))
+                    .border(
+                        1.dp,
+                        AccentOrange.copy(alpha = 0.3f),
+                        RoundedCornerShape(16.dp)
+                    )
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "TRADE TO UNLOCK",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AccentOrange,
+                    letterSpacing = 2.sp
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                if (hasBinance) {
+                    TradeStatusRow("Binance", true)
+                }
+                if (hasSolana) {
+                    if (hasBinance) Spacer(Modifier.height(8.dp))
+                    TradeStatusRow("Solana", true)
+                }
+                if (!hasBinance && !hasSolana) {
+                    Text("No trading accounts connected", color = Gray600, fontSize = 14.sp)
+                }
+            }
 
             Spacer(Modifier.height(16.dp))
 
-            if (hasBinance) {
-                TradeStatusRow("Binance", "No qualifying trade today")
-            }
-            if (hasSolana) {
-                if (hasBinance) Spacer(Modifier.height(6.dp))
-                TradeStatusRow("Solana", "No qualifying trade today")
-            }
-            if (!hasBinance && !hasSolana) {
-                Text("No trading accounts connected", color = Gray600, fontSize = 14.sp)
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        // Quick launch buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(
-                onClick = onOpenBinance,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Gray300),
-                shape = RoundedCornerShape(8.dp)
+            // Quick launch buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Open Binance")
-            }
-
-            OutlinedButton(
-                onClick = onOpenPhantom,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Gray300),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Open Phantom")
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        // Check trade button
-        Button(
-            onClick = onTradeCheckRequested,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isCheckingTrade,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Gray800,
-                contentColor = Gray100
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            if (isCheckingTrade) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    color = Gray400,
-                    strokeWidth = 2.dp
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Checking...")
-            } else {
-                Icon(
-                    Icons.Default.Refresh,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("I just made a trade — check now")
-            }
-        }
-
-        // Trade check result
-        AnimatedVisibility(
-            visible = tradeCheckResult != null,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            Text(
-                text = tradeCheckResult ?: "",
-                fontSize = 13.sp,
-                color = Gray400,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        HorizontalDivider(color = Gray800)
-
-        Spacer(Modifier.height(24.dp))
-
-        // Bypass section
-        Text(
-            text = "Or type to bypass:",
-            fontSize = 14.sp,
-            color = Gray600
-        )
-
-        Spacer(Modifier.height(4.dp))
-
-        Text(
-            text = "\"$bypassPhrase\"",
-            fontSize = 13.sp,
-            color = Gray600,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Medium
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = bypassInput,
-            onValueChange = { newValue ->
-                bypassInput = newValue
-                if (newValue.trim().equals(bypassPhrase, ignoreCase = true)) {
-                    onBypassConfirmed()
+                OutlinedButton(
+                    onClick = onOpenBinance,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Gray300),
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                        brush = Brush.linearGradient(listOf(GlassBorderLight, GlassBorderLight))
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Open Binance", fontSize = 13.sp)
                 }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Type the phrase above...", color = Gray600) },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Gray300,
-                unfocusedTextColor = Gray300,
-                focusedBorderColor = Gray600,
-                unfocusedBorderColor = Gray800,
-                cursorColor = Gray300
-            ),
-            shape = RoundedCornerShape(8.dp),
-            singleLine = true
-        )
 
-        // Streak counter
-        if (streakDays > 0) {
-            Spacer(Modifier.height(24.dp))
+                OutlinedButton(
+                    onClick = onOpenPhantom,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Gray300),
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                        brush = Brush.linearGradient(listOf(GlassBorderLight, GlassBorderLight))
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Open Phantom", fontSize = 13.sp)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Primary CTA — gradient "Check for trades" button with glow
+            Button(
+                onClick = onTradeCheckRequested,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .drawBehind {
+                        if (!isCheckingTrade) {
+                            drawRoundRect(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(AccentOrange.copy(alpha = 0.3f), Color.Transparent),
+                                    center = center,
+                                    radius = size.width * 0.6f
+                                ),
+                                cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx())
+                            )
+                        }
+                    },
+                enabled = !isCheckingTrade,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.White,
+                    disabledContainerColor = SurfaceCard,
+                    disabledContentColor = Gray600
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (!isCheckingTrade) AccentOrange else SurfaceCard,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isCheckingTrade) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(Modifier.size(18.dp), color = Gray400, strokeWidth = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Checking...")
+                        }
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("I just made a trade — check now", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+
+            // Trade check result
+            AnimatedVisibility(
+                visible = tradeCheckResult != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Text(
+                    text = tradeCheckResult ?: "",
+                    fontSize = 13.sp,
+                    color = Gray400,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            HorizontalDivider(color = GlassBorder)
+
+            Spacer(Modifier.height(28.dp))
+
+            // Bypass section — intentionally muted and unattractive
             Text(
-                text = "$streakDays-day trade streak",
-                fontSize = 14.sp,
-                color = Gray400,
-                fontWeight = FontWeight.Medium
+                text = "Or type the shame phrase to bypass:",
+                fontSize = 13.sp,
+                color = Gray600.copy(alpha = 0.7f)
             )
+
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = "\"$bypassPhrase\"",
+                fontSize = 13.sp,
+                color = Gray600.copy(alpha = 0.5f),
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Medium,
+                fontFamily = FontFamily.Monospace
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = bypassInput,
+                onValueChange = { newValue ->
+                    bypassInput = newValue
+                    if (newValue.trim().equals(bypassPhrase, ignoreCase = true)) {
+                        onBypassConfirmed()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Type the phrase above...", color = Gray600.copy(alpha = 0.5f)) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Gray400,
+                    unfocusedTextColor = Gray400,
+                    focusedBorderColor = Gray600.copy(alpha = 0.3f),
+                    unfocusedBorderColor = GlassBorder,
+                    cursorColor = Gray400
+                ),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
+
+            // Streak counter
+            if (streakDays > 0) {
+                Spacer(Modifier.height(28.dp))
+                Row(
+                    modifier = Modifier
+                        .background(GlassBg, CircleShape)
+                        .border(1.dp, AccentOrange.copy(alpha = 0.2f), CircleShape)
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "$streakDays-day trade streak — don't break it!",
+                        fontSize = 14.sp,
+                        color = AccentOrange,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (streakShields > 0) {
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            Icons.Default.Shield,
+                            contentDescription = null,
+                            tint = AccentOrange,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "x$streakShields",
+                            fontSize = 13.sp,
+                            color = AccentOrange,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
         }
 
-        Spacer(Modifier.height(32.dp))
+        // Celebration overlay
+        if (showCelebration) {
+            ConfettiEffect(Modifier.fillMaxSize())
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn()
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "+$${String.format("%.2f", celebrationProfit)}",
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = StatusGreen
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun TradeStatusRow(source: String, status: String) {
+private fun TradeStatusRow(source: String, connected: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("$source:", color = Gray400, fontSize = 14.sp)
-        Text(status, color = Gray600, fontSize = 14.sp)
+        Text(source, color = Gray300, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(if (connected) StatusGreen else StatusRed, CircleShape)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                if (connected) "Connected" else "Not connected",
+                color = if (connected) StatusGreen else Gray600,
+                fontSize = 13.sp
+            )
+        }
     }
 }
 

@@ -84,4 +84,8 @@ dependencies {
 
     // Coroutines
     implementation(libs.coroutines.android)
+
+    // WorkManager
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
 }

@@ -30,4 +30,7 @@ interface DailyUsageDao {
 
     @Query("INSERT OR IGNORE INTO DailyUsage (date, packageName, usedSeconds) VALUES (:date, :packageName, 0)")
     suspend fun ensureExists(date: LocalDate, packageName: String)
+
+    @Query("SELECT * FROM DailyUsage WHERE date >= :start AND date <= :end")
+    suspend fun getUsageForDateRange(start: LocalDate, end: LocalDate): List<DailyUsage>
 }

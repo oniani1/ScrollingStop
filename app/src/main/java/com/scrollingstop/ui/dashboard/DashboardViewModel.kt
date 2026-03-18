@@ -2,6 +2,7 @@ package com.scrollingstop.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scrollingstop.data.achievements.AchievementChecker
 import com.scrollingstop.data.db.BlockedAppDao
 import com.scrollingstop.data.db.BypassLogDao
 import com.scrollingstop.data.db.DailyUsageDao
@@ -25,8 +26,10 @@ data class DashboardState(
     val isUnlocked: Boolean = false,
     val todayUnlock: TradeUnlock? = null,
     val streakDays: Int = 0,
+    val streakShields: Int = 0,
     val weeklyTradeUnlocks: Int = 0,
     val weeklyBypasses: Int = 0,
+    val totalForcedProfit: Double = 0.0,
     val isCheckingTrade: Boolean = false,
     val tradeCheckMessage: String? = null
 )
@@ -37,6 +40,7 @@ class DashboardViewModel @Inject constructor(
     private val tradeUnlockDao: TradeUnlockDao,
     private val bypassLogDao: BypassLogDao,
     private val tradeCheckManager: TradeCheckManager,
+    private val achievementChecker: AchievementChecker,
     val prefs: SecurePreferences
 ) : ViewModel() {
 
@@ -59,15 +63,44 @@ class DashboardViewModel @Inject constructor(
             val unlock = tradeUnlockDao.getUnlockForDateOnce(today)
             val weeklyUnlocks = tradeUnlockDao.getTradeUnlockCount(weekAgo, today)
             val weeklyBypasses = bypassLogDao.getBypassCountSince(weekAgo)
+            val totalProfit = tradeUnlockDao.getTotalProfit()
 
-            // Calculate streak
+            // Calculate streak with shield support
             var streak = 0
+            var shields = prefs.streakShields
             var day = today.minusDays(1)
-            while (tradeUnlockDao.hasUnlockForDate(day)) {
-                streak++
-                day = day.minusDays(1)
+            while (true) {
+                val hadTrade = tradeUnlockDao.hasUnlockForDate(day)
+                if (hadTrade) {
+                    streak++
+                    day = day.minusDays(1)
+                } else if (shields > 0) {
+                    shields--
+                    streak++
+                    day = day.minusDays(1)
+                } else {
+                    break
+                }
             }
             if (unlock != null) streak++
+
+            // Award new shields: +1 shield per 7-day milestone
+            val previousStreak = prefs.lastKnownStreak
+            if (streak >= 7 && streak > previousStreak) {
+                val prevMilestones = previousStreak / 7
+                val newMilestones = streak / 7
+                if (newMilestones > prevMilestones) {
+                    prefs.streakShields = prefs.streakShields + (newMilestones - prevMilestones)
+                }
+            }
+            prefs.lastKnownStreak = streak
+
+            // Check achievements in background
+            launch {
+                try {
+                    achievementChecker.checkAll(streak)
+                } catch (_: Exception) { }
+            }
 
             _state.value = _state.value.copy(
                 usedSeconds = used,
@@ -75,8 +108,10 @@ class DashboardViewModel @Inject constructor(
                 isUnlocked = unlock != null,
                 todayUnlock = unlock,
                 streakDays = streak,
+                streakShields = prefs.streakShields,
                 weeklyTradeUnlocks = weeklyUnlocks,
-                weeklyBypasses = weeklyBypasses
+                weeklyBypasses = weeklyBypasses,
+                totalForcedProfit = totalProfit
             )
         }
     }

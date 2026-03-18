@@ -8,11 +8,13 @@ import com.scrollingstop.data.preferences.SecurePreferences
 import com.scrollingstop.ui.dashboard.DashboardScreen
 import com.scrollingstop.ui.onboarding.OnboardingScreen
 import com.scrollingstop.ui.settings.SettingsScreen
+import com.scrollingstop.ui.stats.StatsScreen
 
 object Routes {
     const val ONBOARDING = "onboarding"
     const val DASHBOARD = "dashboard"
     const val SETTINGS = "settings"
+    const val STATS = "stats"
 }
 
 @Composable
@@ -36,12 +38,21 @@ fun AppNavigation(prefs: SecurePreferences) {
             DashboardScreen(
                 onNavigateToSettings = {
                     navController.navigate(Routes.SETTINGS)
+                },
+                onNavigateToStats = {
+                    navController.navigate(Routes.STATS)
                 }
             )
         }
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.STATS) {
+            StatsScreen(
                 onBack = { navController.popBackStack() }
             )
         }

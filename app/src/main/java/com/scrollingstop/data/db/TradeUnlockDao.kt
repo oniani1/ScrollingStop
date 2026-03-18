@@ -43,4 +43,16 @@ interface TradeUnlockDao {
         ) AS dates
     """)
     suspend fun getAllTradeDaysCount(endDate: LocalDate): Int
+
+    @Query("SELECT COALESCE(SUM(profitUsd), 0.0) FROM TradeUnlock")
+    suspend fun getTotalProfit(): Double
+
+    @Query("SELECT * FROM TradeUnlock ORDER BY date DESC")
+    suspend fun getAllUnlocks(): List<TradeUnlock>
+
+    @Query("SELECT MAX(profitUsd) FROM TradeUnlock")
+    suspend fun getBestTrade(): Double?
+
+    @Query("SELECT COUNT(*) FROM TradeUnlock")
+    suspend fun getTotalTradeCount(): Int
 }

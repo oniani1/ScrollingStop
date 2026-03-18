@@ -2,6 +2,7 @@ package com.scrollingstop.di
 
 import android.content.Context
 import androidx.room.Room
+import com.scrollingstop.data.db.AchievementDao
 import com.scrollingstop.data.db.AppDatabase
 import com.scrollingstop.data.db.BlockedAppDao
 import com.scrollingstop.data.db.BypassLogDao
@@ -25,7 +26,7 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "scrollingstop.db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
@@ -39,4 +40,7 @@ object AppModule {
 
     @Provides
     fun provideBypassLogDao(db: AppDatabase): BypassLogDao = db.bypassLogDao()
+
+    @Provides
+    fun provideAchievementDao(db: AppDatabase): AchievementDao = db.achievementDao()
 }

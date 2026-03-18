@@ -59,6 +59,7 @@ class UsageMonitorService : Service() {
     private var autoCheckJob: Job? = null
     private var lastForegroundPackage: String? = null
     private var trackingStartMs: Long = 0
+    private var approachingNotifDate: LocalDate? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -144,6 +145,16 @@ class UsageMonitorService : Service() {
                         val totalUsed = dailyUsageDao.getTotalUsageForDateOnce(today)
                         val limit = prefs.dailyLimitSeconds
                         val unlocked = tradeUnlockDao.hasUnlockForDate(today)
+
+                        // Approaching limit notification (80%)
+                        if (totalUsed >= (limit * 0.8) && totalUsed < limit && approachingNotifDate != today) {
+                            approachingNotifDate = today
+                            NotificationHelper.showApproachingLimit(
+                                this@UsageMonitorService,
+                                totalUsed / 60,
+                                limit / 60
+                            )
+                        }
 
                         if (totalUsed >= limit && !unlocked) {
                             if (BlockOverlayService.isShowing.value) {

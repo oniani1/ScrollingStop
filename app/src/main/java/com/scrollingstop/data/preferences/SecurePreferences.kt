@@ -69,6 +69,14 @@ class SecurePreferences @Inject constructor(
         get() = prefs.getBoolean(KEY_MONITORING_ENABLED, true)
         set(value) = prefs.edit().putBoolean(KEY_MONITORING_ENABLED, value).apply()
 
+    var streakShields: Int
+        get() = prefs.getInt(KEY_STREAK_SHIELDS, 0)
+        set(value) = prefs.edit().putInt(KEY_STREAK_SHIELDS, value).apply()
+
+    var lastKnownStreak: Int
+        get() = prefs.getInt(KEY_LAST_KNOWN_STREAK, 0)
+        set(value) = prefs.edit().putInt(KEY_LAST_KNOWN_STREAK, value).apply()
+
     fun clearBinanceKeys() {
         prefs.edit()
             .remove(KEY_BINANCE_API_KEY)
@@ -93,6 +101,8 @@ class SecurePreferences @Inject constructor(
         private const val KEY_BYPASS_PHRASE = "bypass_phrase"
         private const val KEY_ONBOARDING_DONE = "onboarding_completed"
         private const val KEY_MONITORING_ENABLED = "monitoring_enabled"
+        private const val KEY_STREAK_SHIELDS = "streak_shields"
+        private const val KEY_LAST_KNOWN_STREAK = "last_known_streak"
 
         const val DEFAULT_DAILY_LIMIT = 3600 // 1 hour
         const val DEFAULT_PROFIT_THRESHOLD = 100f

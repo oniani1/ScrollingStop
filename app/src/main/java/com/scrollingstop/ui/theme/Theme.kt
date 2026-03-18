@@ -11,21 +11,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Gray300,
-    onPrimary = Gray950,
-    primaryContainer = Gray800,
-    onPrimaryContainer = Gray200,
-    secondary = Gray400,
-    onSecondary = Gray950,
-    secondaryContainer = Gray800,
+    primary = AccentOrange,
+    onPrimary = White,
+    primaryContainer = AccentOrangeDim,
+    onPrimaryContainer = White,
+    secondary = AccentOrangeLight,
+    onSecondary = DeepBlack,
+    secondaryContainer = SurfaceCard,
     onSecondaryContainer = Gray200,
-    background = Gray950,
+    background = DeepBlack,
     onBackground = Gray100,
-    surface = Gray900,
+    surface = SurfaceDark,
     onSurface = Gray100,
-    surfaceVariant = Gray850,
+    surfaceVariant = SurfaceCard,
     onSurfaceVariant = Gray300,
-    outline = Gray600,
+    outline = GlassBorderLight,
 )
 
 private val LightColorScheme = lightColorScheme(
