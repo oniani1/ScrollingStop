@@ -24,6 +24,17 @@ object ShareCardGenerator {
         // Background
         canvas.drawColor(Color.parseColor("#0A0A0F"))
 
+        // Draw subtle blue gradient glow (top-right)
+        val glowPaint = android.graphics.Paint().apply {
+            isAntiAlias = true
+            shader = android.graphics.RadialGradient(
+                width * 0.9f, height * 0.05f, width * 0.5f,
+                Color.parseColor("#194F8CFF"), Color.TRANSPARENT,
+                android.graphics.Shader.TileMode.CLAMP
+            )
+        }
+        canvas.drawCircle(width * 0.9f, height * 0.05f, width * 0.5f, glowPaint)
+
         val paint = android.graphics.Paint().apply {
             isAntiAlias = true
             color = Color.parseColor("#F5F5F5")
@@ -49,7 +60,7 @@ object ShareCardGenerator {
         // Use total profit or weekly info as hero
 
         if (state.totalProfit > 0) {
-            paint.color = Color.parseColor("#34D399")
+            paint.color = Color.parseColor("#4ADE80")
             paint.textSize = 120f
             val profitText = "$${String.format("%,.0f", state.totalProfit)}"
             canvas.drawText(profitText, (width - paint.measureText(profitText)) / 2, 650f, paint)

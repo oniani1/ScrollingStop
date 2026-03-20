@@ -62,7 +62,8 @@ import androidx.compose.ui.unit.sp
 import com.scrollingstop.data.preferences.SecurePreferences
 import com.scrollingstop.ui.components.GlassCard
 import com.scrollingstop.ui.components.GradientButton
-import com.scrollingstop.ui.theme.AccentOrange
+import com.scrollingstop.ui.theme.AccentBlue
+import com.scrollingstop.ui.theme.AccentViolet
 import com.scrollingstop.ui.theme.DeepBlack
 import com.scrollingstop.ui.theme.GlassBg
 import com.scrollingstop.ui.theme.GlassBorder
@@ -89,7 +90,7 @@ fun OnboardingScreen(
                 // Subtle radial gradient accents in corners
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(AccentOrange.copy(alpha = 0.08f), Color.Transparent),
+                        colors = listOf(AccentBlue.copy(alpha = 0.10f), Color.Transparent),
                         center = Offset(size.width * 0.9f, size.height * 0.1f),
                         radius = size.width * 0.7f
                     ),
@@ -98,7 +99,7 @@ fun OnboardingScreen(
                 )
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(AccentOrange.copy(alpha = 0.06f), Color.Transparent),
+                        colors = listOf(AccentViolet.copy(alpha = 0.08f), Color.Transparent),
                         center = Offset(size.width * 0.1f, size.height * 0.85f),
                         radius = size.width * 0.6f
                     ),
@@ -154,7 +155,7 @@ private fun StepIndicator(currentStep: Int, totalSteps: Int) {
                     .height(8.dp)
                     .width(width.dp)
                     .background(
-                        if (index <= currentStep) AccentOrange
+                        if (index <= currentStep) AccentBlue
                         else Gray600.copy(alpha = 0.3f),
                         CircleShape
                     )
@@ -179,7 +180,7 @@ private fun WelcomeStep(onNext: () -> Unit) {
         Text(
             text = "Stop scrolling. Start trading.",
             fontSize = 18.sp,
-            color = AccentOrange,
+            color = AccentBlue,
             fontWeight = FontWeight.Medium
         )
 
@@ -293,8 +294,8 @@ private fun LimitsStep(prefs: SecurePreferences, onNext: () -> Unit) {
                     steps = 34,
                     modifier = Modifier.fillMaxWidth(),
                     colors = SliderDefaults.colors(
-                        thumbColor = AccentOrange,
-                        activeTrackColor = AccentOrange,
+                        thumbColor = AccentBlue,
+                        activeTrackColor = AccentBlue,
                         inactiveTrackColor = GlassBorder
                     )
                 )
@@ -321,8 +322,8 @@ private fun LimitsStep(prefs: SecurePreferences, onNext: () -> Unit) {
                     steps = 98,
                     modifier = Modifier.fillMaxWidth(),
                     colors = SliderDefaults.colors(
-                        thumbColor = AccentOrange,
-                        activeTrackColor = AccentOrange,
+                        thumbColor = AccentBlue,
+                        activeTrackColor = AccentBlue,
                         inactiveTrackColor = GlassBorder
                     )
                 )
@@ -356,7 +357,7 @@ private fun TradingSetupStep(prefs: SecurePreferences, onNext: () -> Unit) {
             Column {
                 Text(
                     "Binance API (read-only)",
-                    color = AccentOrange,
+                    color = AccentBlue,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.5.sp
@@ -392,7 +393,7 @@ private fun TradingSetupStep(prefs: SecurePreferences, onNext: () -> Unit) {
             Column {
                 Text(
                     "Solana Wallet",
-                    color = AccentOrange,
+                    color = AccentBlue,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.5.sp
@@ -498,9 +499,9 @@ private fun PermissionRow(label: String, granted: Boolean, onRequest: () -> Unit
         if (!granted) {
             OutlinedButton(
                 onClick = onRequest,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentOrange),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentBlue),
                 border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
-                    brush = Brush.linearGradient(listOf(AccentOrange.copy(alpha = 0.5f), AccentOrange.copy(alpha = 0.5f)))
+                    brush = Brush.linearGradient(listOf(AccentBlue.copy(alpha = 0.5f), AccentBlue.copy(alpha = 0.5f)))
                 ),
 
                 shape = RoundedCornerShape(8.dp)
@@ -516,10 +517,10 @@ private fun PermissionRow(label: String, granted: Boolean, onRequest: () -> Unit
 private fun glassTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = Gray100,
     unfocusedTextColor = Gray300,
-    focusedBorderColor = AccentOrange.copy(alpha = 0.5f),
+    focusedBorderColor = AccentBlue.copy(alpha = 0.5f),
     unfocusedBorderColor = GlassBorder,
-    cursorColor = AccentOrange,
-    focusedLabelColor = AccentOrange,
+    cursorColor = AccentBlue,
+    focusedLabelColor = AccentBlue,
     unfocusedLabelColor = Gray600
 )
 

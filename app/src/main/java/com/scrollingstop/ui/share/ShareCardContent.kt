@@ -23,7 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.scrollingstop.ui.theme.AccentOrange
+import com.scrollingstop.ui.theme.AccentBlue
+import com.scrollingstop.ui.theme.AccentViolet
 import com.scrollingstop.ui.theme.DeepBlack
 import com.scrollingstop.ui.theme.GlassBg
 import com.scrollingstop.ui.theme.Gray100
@@ -46,7 +47,7 @@ fun ShareCardContent(
                 // Corner gradient accents
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(AccentOrange.copy(alpha = 0.15f), Color.Transparent),
+                        colors = listOf(AccentBlue.copy(alpha = 0.15f), Color.Transparent),
                         center = Offset(size.width * 0.9f, size.height * 0.05f),
                         radius = size.width * 0.5f
                     ),
@@ -55,7 +56,7 @@ fun ShareCardContent(
                 )
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(AccentOrange.copy(alpha = 0.1f), Color.Transparent),
+                        colors = listOf(AccentViolet.copy(alpha = 0.12f), Color.Transparent),
                         center = Offset(size.width * 0.1f, size.height * 0.95f),
                         radius = size.width * 0.5f
                     ),
@@ -82,7 +83,7 @@ fun ShareCardContent(
             Text(
                 "Stop scrolling. Start trading.",
                 fontSize = 14.sp,
-                color = AccentOrange
+                color = AccentBlue
             )
 
             Spacer(Modifier.weight(0.3f))

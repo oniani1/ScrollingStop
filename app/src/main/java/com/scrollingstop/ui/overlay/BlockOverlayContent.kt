@@ -55,7 +55,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.scrollingstop.ui.theme.AccentOrange
+import com.scrollingstop.ui.theme.AccentBlue
+import com.scrollingstop.ui.theme.AccentViolet
 import com.scrollingstop.ui.theme.GlassBg
 import com.scrollingstop.ui.theme.GlassBorder
 import com.scrollingstop.ui.theme.GlassBorderLight
@@ -116,7 +117,7 @@ fun BlockOverlayContent(
                 // Lock icon glow
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(AccentOrange.copy(alpha = 0.08f), Color.Transparent),
+                        colors = listOf(AccentBlue.copy(alpha = 0.08f), Color.Transparent),
                         center = Offset(size.width / 2, size.height * 0.12f),
                         radius = size.width * 0.4f
                     ),
@@ -141,7 +142,7 @@ fun BlockOverlayContent(
                     .drawBehind {
                         drawCircle(
                             brush = Brush.radialGradient(
-                                colors = listOf(AccentOrange.copy(alpha = 0.25f), Color.Transparent),
+                                colors = listOf(AccentBlue.copy(alpha = 0.25f), Color.Transparent),
                                 radius = size.width
                             )
                         )
@@ -184,7 +185,7 @@ fun BlockOverlayContent(
                     .background(GlassBg, RoundedCornerShape(16.dp))
                     .border(
                         1.dp,
-                        AccentOrange.copy(alpha = 0.3f),
+                        AccentBlue.copy(alpha = 0.3f),
                         RoundedCornerShape(16.dp)
                     )
                     .padding(20.dp),
@@ -194,7 +195,7 @@ fun BlockOverlayContent(
                     text = "TRADE TO UNLOCK",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = AccentOrange,
+                    color = AccentBlue,
                     letterSpacing = 2.sp
                 )
 
@@ -255,7 +256,7 @@ fun BlockOverlayContent(
                         if (!isCheckingTrade) {
                             drawRoundRect(
                                 brush = Brush.radialGradient(
-                                    colors = listOf(AccentOrange.copy(alpha = 0.3f), Color.Transparent),
+                                    colors = listOf(AccentBlue.copy(alpha = 0.3f), Color.Transparent),
                                     center = center,
                                     radius = size.width * 0.6f
                                 ),
@@ -276,7 +277,7 @@ fun BlockOverlayContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            if (!isCheckingTrade) AccentOrange else SurfaceCard,
+                            if (!isCheckingTrade) AccentViolet else SurfaceCard,
                             RoundedCornerShape(12.dp)
                         )
                         .padding(vertical = 6.dp),
@@ -365,14 +366,14 @@ fun BlockOverlayContent(
                 Row(
                     modifier = Modifier
                         .background(GlassBg, CircleShape)
-                        .border(1.dp, AccentOrange.copy(alpha = 0.2f), CircleShape)
+                        .border(1.dp, AccentBlue.copy(alpha = 0.2f), CircleShape)
                         .padding(horizontal = 20.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "$streakDays-day trade streak — don't break it!",
                         fontSize = 14.sp,
-                        color = AccentOrange,
+                        color = AccentBlue,
                         fontWeight = FontWeight.Medium
                     )
                     if (streakShields > 0) {
@@ -380,13 +381,13 @@ fun BlockOverlayContent(
                         Icon(
                             Icons.Default.Shield,
                             contentDescription = null,
-                            tint = AccentOrange,
+                            tint = AccentBlue,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = "x$streakShields",
                             fontSize = 13.sp,
-                            color = AccentOrange,
+                            color = AccentBlue,
                             fontWeight = FontWeight.Bold
                         )
                     }

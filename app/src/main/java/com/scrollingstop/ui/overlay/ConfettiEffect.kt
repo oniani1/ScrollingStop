@@ -13,7 +13,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
-import com.scrollingstop.ui.theme.AccentOrange
+import com.scrollingstop.ui.theme.AccentBlue
+import com.scrollingstop.ui.theme.AccentViolet
 import com.scrollingstop.ui.theme.StatusGreen
 import kotlin.math.cos
 import kotlin.math.sin
@@ -32,7 +33,7 @@ private data class Particle(
 @Composable
 fun ConfettiEffect(modifier: Modifier = Modifier) {
     val progress = remember { Animatable(0f) }
-    val colors = listOf(AccentOrange, AccentOrange, StatusGreen, Color.White, Color(0xFFFBBF24))
+    val colors = listOf(AccentBlue, AccentViolet, StatusGreen, Color.White, Color(0xFFFBBF24))
 
     val particles = remember {
         List(60) {

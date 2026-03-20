@@ -61,6 +61,10 @@ class SecurePreferences @Inject constructor(
         get() = prefs.getString(KEY_BYPASS_PHRASE, DEFAULT_BYPASS_PHRASE) ?: DEFAULT_BYPASS_PHRASE
         set(value) = prefs.edit().putString(KEY_BYPASS_PHRASE, value).apply()
 
+    var bypassEnabled: Boolean
+        get() = prefs.getBoolean(KEY_BYPASS_ENABLED, true)
+        set(value) = prefs.edit().putBoolean(KEY_BYPASS_ENABLED, value).apply()
+
     var onboardingCompleted: Boolean
         get() = prefs.getBoolean(KEY_ONBOARDING_DONE, false)
         set(value) = prefs.edit().putBoolean(KEY_ONBOARDING_DONE, value).apply()
@@ -101,6 +105,7 @@ class SecurePreferences @Inject constructor(
         private const val KEY_BYPASS_PHRASE = "bypass_phrase"
         private const val KEY_ONBOARDING_DONE = "onboarding_completed"
         private const val KEY_MONITORING_ENABLED = "monitoring_enabled"
+        private const val KEY_BYPASS_ENABLED = "bypass_enabled"
         private const val KEY_STREAK_SHIELDS = "streak_shields"
         private const val KEY_LAST_KNOWN_STREAK = "last_known_streak"
 

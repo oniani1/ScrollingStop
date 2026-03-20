@@ -25,7 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.scrollingstop.ui.theme.AccentOrange
+import com.scrollingstop.ui.theme.AccentBlue
+import com.scrollingstop.ui.theme.AccentViolet
 import com.scrollingstop.ui.theme.Gray600
 import com.scrollingstop.ui.theme.SurfaceCard
 
@@ -40,7 +41,7 @@ fun GradientButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
                 if (enabled) {
                     drawRoundRect(
                         brush = Brush.radialGradient(
-                            colors = listOf(AccentOrange.copy(alpha = 0.2f), Color.Transparent),
+                            colors = listOf(AccentViolet.copy(alpha = 0.3f), Color.Transparent),
                             center = center,
                             radius = size.width * 0.6f
                         ),
@@ -49,20 +50,32 @@ fun GradientButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
                 }
             },
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (enabled) AccentOrange else SurfaceCard,
+            containerColor = Color.Transparent,
             contentColor = Color.White,
             disabledContainerColor = SurfaceCard,
             disabledContentColor = Gray600
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    if (enabled) Brush.horizontalGradient(
+                        listOf(AccentViolet, AccentBlue)
+                    ) else Brush.horizontalGradient(
+                        listOf(SurfaceCard, SurfaceCard)
+                    ),
+                    RoundedCornerShape(12.dp)
+                )
+                .padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
-            Spacer(Modifier.width(8.dp))
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = Color.White)
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
+            }
         }
     }
 }

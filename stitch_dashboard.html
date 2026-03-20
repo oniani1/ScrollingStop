@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ScrollStop Dashboard</title>
+<!-- BEGIN: External Resources -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'deep-black': '#0A0A0F',
+            'fintech-blue': '#4F8CFF',
+            'fintech-violet': '#8B5CF6',
+            'glass-border': 'rgba(255, 255, 255, 0.1)',
+            'glass-bg': 'rgba(255, 255, 255, 0.03)',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+<!-- END: External Resources -->
+<!-- BEGIN: Custom Styles -->
+<style data-purpose="layout-and-effects">
+    body {
+      background: radial-gradient(circle at top center, #161625 0%, #0A0A0F 100%);
+      min-height: 100vh;
+      color: #FFFFFF;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .gauge-gradient {
+      stroke: url(#gaugeGradient);
+    }
+
+    .status-pill-shadow {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+    }
+  </style>
+<!-- END: Custom Styles -->
+</head>
+<body class="flex flex-col p-6 max-w-md mx-auto">
+<!-- BEGIN: TopBar -->
+<header class="flex justify-between items-center mb-10" data-purpose="dashboard-header">
+<h1 class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+      ScrollStop
+    </h1>
+<div class="flex gap-4">
+<button aria-label="Refresh" class="text-gray-400 hover:text-white transition-colors">
+<i class="fa-solid fa-rotate-right text-lg"></i>
+</button>
+<button aria-label="Settings" class="text-gray-400 hover:text-white transition-colors">
+<i class="fa-solid fa-gear text-lg"></i>
+</button>
+</div>
+</header>
+<!-- END: TopBar -->
+<!-- BEGIN: VisualCenterpiece -->
+<main class="flex-grow flex flex-col items-center">
+<!-- Circular Gauge -->
+<div class="relative w-64 h-64 flex items-center justify-center mb-8" data-purpose="usage-gauge">
+<svg class="w-full h-full transform -rotate-90">
+<!-- Background Track -->
+<circle cx="128" cy="128" fill="transparent" r="110" stroke="rgba(255,255,255,0.05)" stroke-width="12"></circle>
+<!-- Progress Arc -->
+<circle class="text-fintech-blue gauge-gradient" cx="128" cy="128" fill="transparent" r="110" stroke="currentColor" stroke-dasharray="691.15" stroke-dashoffset="428" stroke-linecap="round" stroke-width="12"></circle>
+<defs>
+<lineargradient id="gaugeGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" style="stop-color:#4F8CFF;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Gauge Text Content -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="text-5xl font-extrabold tracking-tighter">23m</span>
+<span class="text-gray-500 text-sm font-medium mt-1 uppercase tracking-widest">of 1h 0m</span>
+</div>
+</div>
+<!-- Status Pill -->
+<div class="glass-morphism px-5 py-2 rounded-full flex items-center gap-2 mb-12 status-pill-shadow" data-purpose="lock-status">
+<i class="fa-solid fa-lock text-fintech-violet text-xs"></i>
+<span class="text-sm font-semibold tracking-wide uppercase">Locked</span>
+</div>
+<!-- Stats Card (Weekly) -->
+<section class="w-full glass-morphism rounded-3xl p-5 mb-4" data-purpose="weekly-stats">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-sm font-medium text-gray-400">This Week</h2>
+<i class="fa-solid fa-chart-line text-gray-600 text-xs"></i>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<div class="flex flex-col">
+<span class="text-xl font-bold">3</span>
+<span class="text-[10px] uppercase text-gray-500 font-bold tracking-tighter">Trade Unlocks</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xl font-bold">1</span>
+<span class="text-[10px] uppercase text-gray-500 font-bold tracking-tighter">Bypasses</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xl font-bold">5d</span>
+<span class="text-[10px] uppercase text-gray-500 font-bold tracking-tighter">Current Streak</span>
+</div>
+</div>
+</section>
+<!-- Trade Card (Today) -->
+<section class="w-full glass-morphism rounded-3xl p-5" data-purpose="trade-activity">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-sm font-medium text-gray-400">Today's Trade</h2>
+<span class="text-[10px] text-gray-500">14:22 PM</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+<i class="fa-brands fa-bitcoin text-orange-500 text-xl"></i>
+</div>
+<div>
+<p class="font-bold">BTC / USDT</p>
+<p class="text-xs text-gray-500">Long Position</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-green-400 font-bold">+12.4%</p>
+<p class="text-[10px] text-gray-500 uppercase font-bold">Unlocked</p>
+</div>
+</div>
+</section>
+</main>
+<!-- END: VisualCenterpiece -->
+<!-- BEGIN: PrimaryAction -->
+<footer class="mt-8 pb-4">
+<button class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-fintech-blue to-fintech-violet text-white font-bold text-lg shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-transform" data-purpose="cta-button">
+      Check for trades
+    </button>
+</footer>
+<!-- END: PrimaryAction -->
+</body></html>

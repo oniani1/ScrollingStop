@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.scrollingstop.ui.share.ShareCardGenerator
-import com.scrollingstop.ui.theme.AccentOrange
+import com.scrollingstop.ui.theme.AccentBlue
 import com.scrollingstop.ui.theme.DeepBlack
 import com.scrollingstop.ui.theme.GlassBg
 import com.scrollingstop.ui.theme.GlassBorder
@@ -150,7 +150,7 @@ fun StatsScreen(
                                         .fillMaxWidth(app.usedSeconds.toFloat() / maxUsage)
                                         .height(8.dp)
                                         .background(
-                                            AccentOrange.copy(alpha = 0.6f),
+                                            AccentBlue.copy(alpha = 0.6f),
                                             RoundedCornerShape(4.dp)
                                         )
                                 )
@@ -265,7 +265,7 @@ private fun AchievementCard(item: AchievementDisplay, modifier: Modifier = Modif
             )
             .border(
                 1.dp,
-                if (isUnlocked) AccentOrange.copy(alpha = 0.3f) else GlassBorder,
+                if (isUnlocked) AccentBlue.copy(alpha = 0.3f) else GlassBorder,
                 RoundedCornerShape(12.dp)
             )
             .padding(12.dp),
@@ -306,7 +306,7 @@ private fun AchievementCard(item: AchievementDisplay, modifier: Modifier = Modif
             }
             Text(
                 date.toString(),
-                color = AccentOrange.copy(alpha = 0.7f),
+                color = AccentBlue.copy(alpha = 0.7f),
                 fontSize = 10.sp
             )
         }
