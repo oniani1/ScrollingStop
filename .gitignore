@@ -1,12 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+android/app/build/
+android/.gradle/
+android/app/.cxx/
+android/build/
+
+# Metro
+.metro-health-check*
+
+# IDE
+.idea/
+.vscode/
 *.iml
-.gradle
-/local.properties
-/.idea
+
+# OS
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+Thumbs.db
+
+# Env / secrets
+.env
+.env.*
+*.keystore
+!debug.keystore
+
+# Screenshots (dev only)
+screenshot*.png
+
+# Stitch designs (local reference)
+stitch-designs/
+
+# Gradle
 local.properties
-/app/build
+
+# Claude Code / session
+.claude/
 SESSION.md
