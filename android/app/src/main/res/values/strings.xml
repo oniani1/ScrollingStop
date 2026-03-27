@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">ScrollStop76</string>
+    <string name="app_name">ScrollStop</string>
+    <string name="accessibility_service_description">ScrollStop monitors which app is in the foreground to block social media when you exceed your daily limit. The only way to unlock is by making a profitable trade.</string>
 </resources>

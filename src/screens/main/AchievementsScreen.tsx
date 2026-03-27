@@ -12,25 +12,8 @@ import { useNavigation } from '@react-navigation/native';
 import { colors } from '../../theme/colors';
 import { Icon } from '../../components/ui';
 import { ACHIEVEMENTS_LIST } from '../../utils/constants';
-
-// Demo: first 4 unlocked
-const UNLOCKED_IDS = new Set([
-  'first_trade',
-  'streak_7',
-  'profit_1000',
-  'zero_bypass_week',
-]);
-
-const UNLOCKED_DATES: Record<string, string> = {
-  first_trade: 'MAR 2',
-  streak_7: 'MAR 9',
-  profit_1000: 'MAR 12',
-  zero_bypass_week: 'MAR 15',
-};
-
-const unlockedCount = UNLOCKED_IDS.size;
-const totalCount = ACHIEVEMENTS_LIST.length;
-const progressPercent = Math.round((unlockedCount / totalCount) * 100);
+import { checkAchievements } from '../../services/achievementEngine';
+import { useAppStore, useStatsStore, useTradeStore } from '../../stores';
 
 export default function AchievementsScreen() {
   const insets = useSafeAreaInsets();
@@ -39,6 +22,25 @@ export default function AchievementsScreen() {
   const cardGap = 10;
   const horizontalPad = 24;
   const cardWidth = (width - horizontalPad * 2 - cardGap) / 2;
+
+  const totalProfit = useAppStore((s) => s.totalProfit);
+  const currentStreak = useAppStore((s) => s.currentStreak);
+  const todayScreenTime = useAppStore((s) => s.todayScreenTime);
+  const unlockedIds = useAppStore((s) => s.unlockedAchievements);
+  const totalUnlocks = useStatsStore((s) => s.totalUnlocks);
+  const totalBypasses = useStatsStore((s) => s.totalBypasses);
+  const solanaConnected = useTradeStore((s) => s.solanaConnected);
+  const trades = useTradeStore((s) => s.trades);
+  const hasSolanaTrade = trades.some((t) => t.source === 'solana');
+
+  const achievements = checkAchievements(
+    { totalProfit, currentStreak, totalUnlocks, totalBypasses, weekBypasses: totalBypasses, todayScreenTime, hasSolanaTrade },
+    new Set(unlockedIds),
+  );
+
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const totalCount = achievements.length;
+  const progressPercent = Math.round((unlockedCount / totalCount) * 100);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -85,10 +87,12 @@ export default function AchievementsScreen() {
 
         {/* 2-column grid */}
         <View style={styles.grid}>
-          {ACHIEVEMENTS_LIST.map((achievement) => {
-            const isUnlocked = UNLOCKED_IDS.has(achievement.id);
-            const hasTarget = 'target' in achievement && achievement.target;
-            const dateLabel = UNLOCKED_DATES[achievement.id];
+          {achievements.map((achievement) => {
+            const isUnlocked = achievement.unlocked;
+            const hasTarget = achievement.target && achievement.target > 0;
+            const dateLabel = achievement.unlockedDate
+              ? new Date(achievement.unlockedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+              : undefined;
 
             return (
               <View
@@ -126,7 +130,7 @@ export default function AchievementsScreen() {
                   ) : hasTarget ? (
                     <View style={styles.progressBadge}>
                       <Text style={styles.progressBadgeText}>
-                        0/{achievement.target}
+                        {achievement.progress ?? 0}/{achievement.target}
                       </Text>
                     </View>
                   ) : !isUnlocked ? (
@@ -167,21 +171,9 @@ export default function AchievementsScreen() {
   );
 }
 
-/**
- * Maps custom icon names from constants to MaterialIcons names.
- */
+/** Icon names are already in MaterialIcons format from constants.ts */
 function mapIconName(icon: string): string {
-  const mapping: Record<string, string> = {
-    rocket: 'rocket-launch',
-    local_fire_department: 'local-fire-department',
-    crown: 'workspace-premium',
-    payments: 'payments',
-    shield: 'shield',
-    timer: 'timer',
-    diamond: 'diamond',
-    gem_spark: 'auto-awesome',
-  };
-  return mapping[icon] ?? icon;
+  return icon;
 }
 
 const styles = StyleSheet.create({

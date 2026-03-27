@@ -8,15 +8,20 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../types/navigation';
+import { Alert } from 'react-native';
 import { colors } from '../../theme/colors';
 import { GlassCard, Icon, ToggleSwitch } from '../../components/ui';
 import { useSettingsStore, useTradeStore } from '../../stores';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const blockedApps = useSettingsStore((s) => s.blockedApps);
+  const setDailyLimit = useSettingsStore((s) => s.setDailyLimit);
+  const setProfitThreshold = useSettingsStore((s) => s.setProfitThreshold);
   const dailyLimitMinutes = useSettingsStore((s) => s.dailyLimitMinutes);
   const profitThreshold = useSettingsStore((s) => s.profitThreshold);
   const bypassEnabled = useSettingsStore((s) => s.bypassEnabled);
@@ -74,7 +79,15 @@ export default function SettingsScreen() {
               </View>
             </GlassCard>
           ))}
-          <TouchableOpacity style={styles.addAppBtn} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.addAppBtn} activeOpacity={0.7} onPress={() => {
+            Alert.alert('Add App', 'Enter the package name (e.g., com.facebook.katana)', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Add', onPress: () => {
+                // For now, show a placeholder — full app picker would require native module
+                Alert.alert('Coming soon', 'App picker will be available in a future update.');
+              }},
+            ]);
+          }}>
             <Icon name="add" size={18} color={colors.primary} />
             <Text style={styles.addAppText}>Add App</Text>
           </TouchableOpacity>
@@ -83,7 +96,9 @@ export default function SettingsScreen() {
         {/* LIMITS */}
         <Text style={styles.sectionLabel}>LIMITS</Text>
         <View style={styles.groupedCard}>
-          <TouchableOpacity style={styles.settingRow} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.settingRow} activeOpacity={0.7} onPress={() => {
+            Alert.alert('Daily Limit', `Current: ${dailyLimitMinutes} min.\nTo change, go through onboarding setup.`);
+          }}>
             <Text style={styles.settingLabel}>Daily Limit</Text>
             <View style={styles.settingValueRow}>
               <Text style={styles.settingValue}>{dailyLimitMinutes} min</Text>
@@ -95,7 +110,9 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.settingRow} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.settingRow} activeOpacity={0.7} onPress={() => {
+            Alert.alert('Profit Threshold', `Current: $${profitThreshold}.\nChange this in the onboarding setup.`);
+          }}>
             <Text style={styles.settingLabel}>Profit Threshold</Text>
             <View style={styles.settingValueRow}>
               <Text style={styles.settingValue}>${profitThreshold}</Text>
@@ -152,6 +169,7 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   style={styles.connectBtn}
                   activeOpacity={0.7}
+                  onPress={() => navigation.navigate('Onboarding', { screen: 'TradingSetup' } as any)}
                 >
                   <Text style={styles.connectBtnText}>Connect</Text>
                 </TouchableOpacity>
@@ -205,6 +223,7 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   style={styles.connectBtn}
                   activeOpacity={0.7}
+                  onPress={() => navigation.navigate('Onboarding', { screen: 'TradingSetup' } as any)}
                 >
                   <Text style={styles.connectBtnText}>Connect</Text>
                 </TouchableOpacity>

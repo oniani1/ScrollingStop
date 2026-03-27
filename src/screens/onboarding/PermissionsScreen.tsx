@@ -19,6 +19,7 @@ import {
   Icon,
 } from '../../components/ui';
 import { useOnboardingStore } from '../../stores';
+import { usePermissions } from '../../hooks/usePermissions';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList>;
 
@@ -64,13 +65,20 @@ export default function PermissionsScreen() {
     usageAccessGranted,
     overlayPermissionGranted,
     batteryOptExcluded,
-    setPermission,
   } = useOnboardingStore();
+
+  const { requestUsageAccess, requestOverlay, requestBattery, checkAll } = usePermissions();
 
   const permissionStates: Record<string, boolean> = {
     usageAccessGranted,
     overlayPermissionGranted,
     batteryOptExcluded,
+  };
+
+  const requesters: Record<string, () => Promise<void>> = {
+    usageAccessGranted: requestUsageAccess,
+    overlayPermissionGranted: requestOverlay,
+    batteryOptExcluded: requestBattery,
   };
 
   return (
@@ -128,7 +136,11 @@ export default function PermissionsScreen() {
                   ) : (
                     <ToggleSwitch
                       value={false}
-                      onValueChange={(val) => setPermission(perm.key, val)}
+                      onValueChange={async () => {
+                        await requesters[perm.key]();
+                        // Re-check permissions after returning from settings
+                        setTimeout(checkAll, 1000);
+                      }}
                     />
                   )}
                 </View>

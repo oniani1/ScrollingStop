@@ -7,26 +7,21 @@ import {
   SafeAreaView,
   ScrollView,
   Dimensions,
+  Share,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../types/navigation';
 import { colors } from '../../theme/colors';
 import { Icon } from '../../components/ui';
+import { useAppStore, useStatsStore } from '../../stores';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 48;
 const CARD_HEIGHT = CARD_WIDTH * (16 / 9);
-
-// Demo data
-const DEMO_STATS = {
-  daysFree: 12,
-  earned: '$847',
-  unlocks: '23',
-  avgPerDay: '2h 14m',
-};
 
 const SHARE_BUTTONS = [
   {
@@ -63,6 +58,25 @@ const SHARE_BUTTONS = [
 
 export default function ShareStatsModal() {
   const navigation = useNavigation<Nav>();
+  const currentStreak = useAppStore((s) => s.currentStreak);
+  const totalProfit = useAppStore((s) => s.totalProfit);
+  const totalUnlocks = useStatsStore((s) => s.totalUnlocks);
+  const todayScreenTime = useAppStore((s) => s.todayScreenTime);
+
+  const stats = {
+    daysFree: currentStreak,
+    earned: `$${totalProfit.toLocaleString()}`,
+    unlocks: String(totalUnlocks),
+    avgPerDay: `${todayScreenTime}m`,
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `I've been ${stats.daysFree} days scroll-free with ScrollStop! Earned ${stats.earned} in forced profits from ${stats.unlocks} trade unlocks. Stop scrolling, start trading.`,
+      });
+    } catch {}
+  };
 
   return (
     <View style={styles.container}>
@@ -107,7 +121,7 @@ export default function ShareStatsModal() {
 
                 {/* Center hero */}
                 <View style={styles.cardCenter}>
-                  <Text style={styles.heroNumber}>{DEMO_STATS.daysFree} days</Text>
+                  <Text style={styles.heroNumber}>{stats.daysFree} days</Text>
                   <Text style={styles.heroLabel}>scroll-free</Text>
                 </View>
 
@@ -122,15 +136,15 @@ export default function ShareStatsModal() {
 
                   <View style={styles.statsGrid}>
                     <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{DEMO_STATS.earned}</Text>
+                      <Text style={styles.statValue}>{stats.earned}</Text>
                       <Text style={styles.statLabel}>EARNED</Text>
                     </View>
                     <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{DEMO_STATS.unlocks}</Text>
+                      <Text style={styles.statValue}>{stats.unlocks}</Text>
                       <Text style={styles.statLabel}>UNLOCKS</Text>
                     </View>
                     <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{DEMO_STATS.avgPerDay}</Text>
+                      <Text style={styles.statValue}>{stats.avgPerDay}</Text>
                       <Text style={styles.statLabel}>AVG/DAY</Text>
                     </View>
                   </View>
@@ -155,9 +169,7 @@ export default function ShareStatsModal() {
                     btn.border && styles.shareButtonBorder,
                   ]}
                   activeOpacity={0.7}
-                  onPress={() => {
-                    // No-op for now
-                  }}
+                  onPress={handleShare}
                 >
                   <Icon name={btn.icon} size={24} color={btn.iconColor} />
                 </TouchableOpacity>
@@ -170,7 +182,7 @@ export default function ShareStatsModal() {
             style={styles.downloadButton}
             activeOpacity={0.7}
             onPress={() => {
-              // No-op for now
+              Alert.alert('Download', 'Image download will be available in a future update.');
             }}
           >
             <Icon name="download" size={20} color={colors.primary} />

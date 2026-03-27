@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OnboardingState {
   currentStep: number;
@@ -22,18 +24,26 @@ interface OnboardingActions {
 
 type OnboardingStore = OnboardingState & OnboardingActions;
 
-export const useOnboardingStore = create<OnboardingStore>()((set) => ({
-  currentStep: 0,
-  usageAccessGranted: false,
-  overlayPermissionGranted: false,
-  batteryOptExcluded: false,
-  accessibilityEnabled: false,
+export const useOnboardingStore = create<OnboardingStore>()(
+  persist(
+    (set) => ({
+      currentStep: 0,
+      usageAccessGranted: false,
+      overlayPermissionGranted: false,
+      batteryOptExcluded: false,
+      accessibilityEnabled: false,
 
-  nextStep: () =>
-    set((state) => ({ currentStep: Math.min(state.currentStep + 1, 3) })),
+      nextStep: () =>
+        set((state) => ({ currentStep: Math.min(state.currentStep + 1, 3) })),
 
-  prevStep: () =>
-    set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
+      prevStep: () =>
+        set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) })),
 
-  setPermission: (key, granted) => set({ [key]: granted }),
-}));
+      setPermission: (key, granted) => set({ [key]: granted }),
+    }),
+    {
+      name: 'scrollstop-onboarding',
+      storage: createJSONStorage(() => AsyncStorage),
+    },
+  ),
+);

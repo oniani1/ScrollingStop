@@ -4,25 +4,25 @@ export const DEFAULT_BLOCKED_APPS: BlockedApp[] = [
   {
     packageName: 'com.instagram.android',
     displayName: 'Instagram',
-    icon: 'camera_enhance',
+    icon: 'camera-enhance',
     enabled: true,
   },
   {
     packageName: 'com.zhiliaoapp.musically',
     displayName: 'TikTok',
-    icon: 'music_note',
+    icon: 'music-note',
     enabled: true,
   },
   {
     packageName: 'com.google.android.youtube',
     displayName: 'YouTube',
-    icon: 'video_library',
+    icon: 'video-library',
     enabled: true,
   },
   {
     packageName: 'com.twitter.android',
     displayName: 'Twitter/X',
-    icon: 'brand_awareness',
+    icon: 'tag',
     enabled: true,
   },
 ];
@@ -41,19 +41,19 @@ export const ACHIEVEMENTS_LIST = [
     id: 'first_trade',
     title: 'First Trade Unlock',
     subtitle: 'Market initialized',
-    icon: 'rocket',
+    icon: 'rocket-launch',
   },
   {
     id: 'streak_7',
     title: '7-Day Streak',
     subtitle: 'Pure discipline',
-    icon: 'local_fire_department',
+    icon: 'local-fire-department',
   },
   {
     id: 'streak_30',
     title: '30-Day Streak',
     subtitle: 'Master of focus',
-    icon: 'crown',
+    icon: 'military-tech',
   },
   {
     id: 'profit_1000',
@@ -83,7 +83,7 @@ export const ACHIEVEMENTS_LIST = [
     id: 'diamond_hands',
     title: 'Diamond Hands',
     subtitle: 'Long-term vision',
-    icon: 'gem_spark',
+    icon: 'auto-awesome',
     target: 50,
   },
 ] as const;

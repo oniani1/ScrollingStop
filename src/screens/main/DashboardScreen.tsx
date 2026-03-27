@@ -11,7 +11,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../theme/colors';
 import { ProgressRing, Icon } from '../../components/ui';
-import { useAppStore, useStatsStore, useSettingsStore } from '../../stores';
+import { useAppStore, useStatsStore, useSettingsStore, useTradeStore } from '../../stores';
+import { useTradeCheck } from '../../hooks/useTradeCheck';
+import { usageStats } from '../../services/blockingManager';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
@@ -25,8 +27,27 @@ export default function DashboardScreen() {
   const dailyLimitMinutes = useSettingsStore((s) => s.dailyLimitMinutes);
   const totalUnlocks = useStatsStore((s) => s.totalUnlocks);
   const totalBypasses = useStatsStore((s) => s.totalBypasses);
+  const binanceConnected = useTradeStore((s) => s.binanceConnected);
+  const solanaConnected = useTradeStore((s) => s.solanaConnected);
+  const setScreenTime = useAppStore((s) => s.setScreenTime);
+
+  const { checking, error: tradeError, checkTrades } = useTradeCheck();
+  const hasTradeConnection = binanceConnected || solanaConnected;
 
   const progress = dailyLimitMinutes > 0 ? todayScreenTime / dailyLimitMinutes : 0;
+
+  // Poll screen time from native UsageStats
+  useEffect(() => {
+    const fetchUsage = async () => {
+      try {
+        const minutes = await usageStats.getUsageToday();
+        if (minutes > 0) setScreenTime(minutes);
+      } catch {}
+    };
+    fetchUsage();
+    const interval = setInterval(fetchUsage, 30_000);
+    return () => clearInterval(interval);
+  }, [setScreenTime]);
 
   // Pulsing dot animation
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -60,13 +81,12 @@ export default function DashboardScreen() {
   const statusLabel = isUnlockedToday ? 'UNLOCKED' : 'ACTIVE';
 
   const handleCheckTrades = () => {
-    console.log('Check for trades pressed');
+    if (!hasTradeConnection) {
+      // Could show alert to connect first
+      return;
+    }
+    checkTrades();
   };
-
-  // Demo data for display
-  const displayProfit = totalProfit > 0 ? totalProfit : 2350;
-  const displayStreak = currentStreak > 0 ? currentStreak : 12;
-  const displayScreenTime = todayScreenTime > 0 ? todayScreenTime : 47;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -92,7 +112,7 @@ export default function DashboardScreen() {
             progress={Math.min(progress, 1)}
             size={256}
             strokeWidth={3}
-            label={String(displayScreenTime)}
+            label={String(todayScreenTime)}
             sublabel="m"
           />
 
@@ -147,15 +167,25 @@ export default function DashboardScreen() {
               <Text style={styles.cardLabel}>FORCED PROFITS</Text>
             </View>
             <Text style={styles.profitNumber}>
-              ${displayProfit.toLocaleString()}
+              ${totalProfit.toLocaleString()}
             </Text>
             <Text style={styles.profitDesc}>
               Total value saved by blocking impulsive scrolling
             </Text>
-            <View style={styles.profitFooter}>
-              <Text style={styles.growthLabel}>LIFETIME GROWTH</Text>
-              <View style={styles.gradientLine} />
-            </View>
+            <TouchableOpacity
+              style={[styles.checkTradesBtn, checking && { opacity: 0.6 }]}
+              activeOpacity={0.85}
+              onPress={handleCheckTrades}
+              disabled={checking}
+            >
+              <Icon name="analytics" size={20} color="#FFFFFF" />
+              <Text style={styles.checkTradesBtnText}>
+                {checking ? 'Checking...' : hasTradeConnection ? 'Check for trades' : 'Connect a wallet first'}
+              </Text>
+            </TouchableOpacity>
+            {tradeError && (
+              <Text style={styles.tradeError}>{tradeError}</Text>
+            )}
             {/* Decorative icon */}
             <View style={styles.decorativeIcon}>
               <Icon
@@ -177,7 +207,7 @@ export default function DashboardScreen() {
               />
             </View>
             <Text style={styles.cardLabel}>CURRENT STREAK</Text>
-            <Text style={styles.streakNumber}>{displayStreak}</Text>
+            <Text style={styles.streakNumber}>{currentStreak}</Text>
             <Text style={styles.streakSub}>Days Strong</Text>
           </View>
 
@@ -232,18 +262,6 @@ export default function DashboardScreen() {
           </View>
         </View>
       </ScrollView>
-
-      {/* FAB */}
-      <View style={[styles.fabContainer, { paddingBottom: insets.bottom + 70 }]}>
-        <TouchableOpacity
-          style={styles.fab}
-          activeOpacity={0.85}
-          onPress={handleCheckTrades}
-        >
-          <Icon name="analytics" size={20} color="#FFFFFF" style={styles.fabIcon} />
-          <Text style={styles.fabText}>Check for trades</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -387,23 +405,28 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 20,
   },
-  profitFooter: {
+  checkTradesBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
     gap: 8,
   },
-  growthLabel: {
+  checkTradesBtnText: {
     fontFamily: 'Inter',
-    fontSize: 9,
+    fontSize: 15,
     fontWeight: '700',
-    color: colors.onSurfaceVariant,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    opacity: 0.5,
+    color: '#FFFFFF',
   },
-  gradientLine: {
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: colors.primary,
-    opacity: 0.4,
+  tradeError: {
+    fontFamily: 'Inter',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#FF6B6B',
+    textAlign: 'center',
+    marginTop: 8,
   },
   decorativeIcon: {
     position: 'absolute',
@@ -495,35 +518,5 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.onSurface,
-  },
-  // FAB
-  fabContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 24,
-    right: 24,
-  },
-  fab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 16,
-    paddingVertical: 18,
-    gap: 8,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  fabIcon: {
-    marginRight: 2,
-  },
-  fabText: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
 });
