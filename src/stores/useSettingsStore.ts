@@ -9,6 +9,7 @@ interface SettingsActions {
   setProfitThreshold: (amount: number) => void;
   setBypassEnabled: (enabled: boolean) => void;
   setBypassPhrase: (phrase: string) => void;
+  setHapticHeartbeat: (enabled: boolean) => void;
   toggleApp: (packageName: string) => void;
   addApp: (app: BlockedApp) => void;
   removeApp: (packageName: string) => void;
@@ -27,11 +28,13 @@ export const useSettingsStore = create<SettingsStore>()(
       bypassAccessMinutes: 15,
       blockedApps: DEFAULT_BLOCKED_APPS,
       onboardingComplete: false,
+      hapticHeartbeatEnabled: true,
 
       setDailyLimit: (mins) => set({ dailyLimitMinutes: mins }),
       setProfitThreshold: (amount) => set({ profitThreshold: amount }),
       setBypassEnabled: (enabled) => set({ bypassEnabled: enabled }),
       setBypassPhrase: (phrase) => set({ bypassPhrase: phrase }),
+      setHapticHeartbeat: (enabled) => set({ hapticHeartbeatEnabled: enabled }),
 
       toggleApp: (packageName) =>
         set((state) => ({

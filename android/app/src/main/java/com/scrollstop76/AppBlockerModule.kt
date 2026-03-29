@@ -62,6 +62,17 @@ class AppBlockerModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun setHapticEnabled(enabled: Boolean, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("haptic_enabled", enabled).apply()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_SET_HAPTIC", e.message)
+        }
+    }
+
+    @ReactMethod
     fun setUnlockedToday(unlocked: Boolean, promise: Promise) {
         try {
             val prefs = reactContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

@@ -15,6 +15,9 @@ import { colors } from '../../theme/colors';
 import { Icon, PrimaryButton, ProgressRing } from '../../components/ui';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useStatsStore } from '../../stores/useStatsStore';
+import { useAppStore } from '../../stores/useAppStore';
+import { useWarModeStore } from '../../stores/useWarModeStore';
+import { sendWarEvent } from '../../services/warModeService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -27,6 +30,9 @@ export default function BypassModal() {
   const bypassCooldownMinutes = useSettingsStore((s) => s.bypassCooldownMinutes);
   const bypassAccessMinutes = useSettingsStore((s) => s.bypassAccessMinutes);
   const addBypass = useStatsStore((s) => s.addBypass);
+  const currentStreak = useAppStore((s) => s.currentStreak);
+  const warPairId = useWarModeStore((s) => s.pairId);
+  const warWarriorId = useWarModeStore((s) => s.warriorId);
 
   const [phase, setPhase] = useState<Phase>('input');
   const [inputText, setInputText] = useState('');
@@ -66,8 +72,21 @@ export default function BypassModal() {
         phrase: bypassPhrase,
         durationMinutes: bypassAccessMinutes,
       });
+      navigation.navigate('ShameReceipt', {
+        phrase: bypassPhrase,
+        durationMinutes: bypassAccessMinutes,
+        streakBroken: currentStreak > 0,
+        currentStreak,
+      });
+      // Send war event if paired
+      if (warPairId && warWarriorId) {
+        sendWarEvent(warPairId, warWarriorId, 'bypass_complete', {
+          phrase: bypassPhrase,
+          durationMinutes: bypassAccessMinutes,
+        }).catch(() => {});
+      }
     }
-  }, [phase, cooldownSeconds, addBypass, bypassPhrase, bypassAccessMinutes]);
+  }, [phase, cooldownSeconds, addBypass, bypassPhrase, bypassAccessMinutes, currentStreak, navigation, warPairId, warWarriorId]);
 
   // Access timer
   useEffect(() => {

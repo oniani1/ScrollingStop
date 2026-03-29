@@ -3,7 +3,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { verifyTrades } from '../services/tradeVerifier';
 import { appBlocker } from '../services/blockingManager';
-import { useTradeStore, useAppStore, useSettingsStore, useStatsStore } from '../stores';
+import { useTradeStore, useAppStore, useSettingsStore, useStatsStore, useWarModeStore } from '../stores';
+import { sendWarEvent } from '../services/warModeService';
 import type { RootStackParamList } from '../types/navigation';
 
 export function useTradeCheck() {
@@ -39,6 +40,15 @@ export function useTradeCheck() {
 
         // Navigate to celebration
         navigation.navigate('Celebration', { trade: result.trade });
+
+        // Send war event if paired
+        const warState = useWarModeStore.getState();
+        if (warState.pairId && warState.warriorId) {
+          sendWarEvent(warState.pairId, warState.warriorId, 'trade_unlock', {
+            pair: result.trade.pair,
+            profit: result.trade.profit,
+          }).catch(() => {});
+        }
       } else {
         setError('No qualifying trades found. Keep trading!');
       }

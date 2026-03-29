@@ -13,7 +13,8 @@ import type { RootStackParamList } from '../../types/navigation';
 import { Alert } from 'react-native';
 import { colors } from '../../theme/colors';
 import { GlassCard, Icon, ToggleSwitch } from '../../components/ui';
-import { useSettingsStore, useTradeStore } from '../../stores';
+import { useSettingsStore, useTradeStore, useWarModeStore } from '../../stores';
+import { appBlocker } from '../../services/blockingManager';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -29,8 +30,12 @@ export default function SettingsScreen() {
   const setBypassEnabled = useSettingsStore((s) => s.setBypassEnabled);
   const removeApp = useSettingsStore((s) => s.removeApp);
 
+  const hapticHeartbeatEnabled = useSettingsStore((s) => s.hapticHeartbeatEnabled);
+  const setHapticHeartbeat = useSettingsStore((s) => s.setHapticHeartbeat);
   const binanceConnected = useTradeStore((s) => s.binanceConnected);
   const solanaConnected = useTradeStore((s) => s.solanaConnected);
+  const warPartnerName = useWarModeStore((s) => s.partnerName);
+  const warPaired = !!useWarModeStore((s) => s.pairId) && !!useWarModeStore((s) => s.partnerId);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -232,6 +237,32 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* WAR MODE */}
+        <Text style={styles.sectionLabel}>WAR MODE</Text>
+        <TouchableOpacity
+          style={styles.connectionCard}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('WarMode')}
+        >
+          <View style={styles.connectionTop}>
+            <View style={[styles.connectionIconBox, { backgroundColor: 'rgba(79,140,255,0.12)' }]}>
+              <Icon name="shield" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.connectionInfo}>
+              <Text style={styles.connectionName}>Accountability Partner</Text>
+              <Text style={styles.connectionDesc}>
+                {warPaired ? `Paired with ${warPartnerName || 'partner'}` : 'Pair with a friend for mutual accountability'}
+              </Text>
+            </View>
+            <Icon name="chevron-right" size={20} color={colors.onSurfaceVariant} />
+          </View>
+          {warPaired && (
+            <View style={[styles.connectionStatus, styles.connectedPill, { alignSelf: 'flex-start' }]}>
+              <Text style={[styles.connectionStatusText, styles.connectedText]}>Active</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
         {/* BYPASS */}
         <Text style={styles.sectionLabel}>BYPASS</Text>
         <View style={styles.groupedCard}>
@@ -257,6 +288,26 @@ export default function SettingsScreen() {
             <ToggleSwitch
               value={bypassEnabled}
               onValueChange={setBypassEnabled}
+            />
+          </View>
+        </View>
+
+        {/* HAPTICS */}
+        <Text style={styles.sectionLabel}>HAPTICS</Text>
+        <View style={styles.groupedCard}>
+          <View style={styles.bypassToggleRow}>
+            <View style={styles.bypassLabelArea}>
+              <Text style={styles.settingLabel}>Haptic Heartbeat</Text>
+              <Text style={styles.bypassDesc}>
+                Phone vibrates as you approach your daily limit
+              </Text>
+            </View>
+            <ToggleSwitch
+              value={hapticHeartbeatEnabled}
+              onValueChange={(v) => {
+                setHapticHeartbeat(v);
+                appBlocker.setHapticEnabled(v).catch(() => {});
+              }}
             />
           </View>
         </View>

@@ -12,9 +12,11 @@ import java.util.Calendar
 class ScrollStopAccessibilityService : AccessibilityService() {
 
     private var lastCheckedPackage: String? = null
+    private var hapticManager: HapticManager? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        hapticManager = HapticManager(this)
         serviceInfo = AccessibilityServiceInfo().apply {
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
@@ -44,19 +46,25 @@ class ScrollStopAccessibilityService : AccessibilityService() {
         val blockedApps = prefs.getStringSet(AppBlockerModule.KEY_BLOCKED_APPS, emptySet()) ?: emptySet()
         val isUnlocked = prefs.getBoolean(AppBlockerModule.KEY_UNLOCKED_TODAY, false)
 
-        // Only block if the app is in blocked list and user hasn't unlocked today
+        // Only process if the app is in blocked list and user hasn't unlocked today
         if (!blockedApps.contains(packageName) || isUnlocked) return
 
-        // Check if user has exceeded daily limit
-        if (hasExceededDailyLimit()) {
+        val usageMinutes = getTodayUsageMinutes()
+
+        // Haptic heartbeat — vibrate as user approaches limit
+        hapticManager?.checkAndVibrate(usageMinutes)
+
+        val prefs2 = getSharedPreferences(AppBlockerModule.PREFS_NAME, Context.MODE_PRIVATE)
+        val dailyLimitMinutes = prefs2.getInt("daily_limit_minutes", 60)
+
+        if (usageMinutes >= dailyLimitMinutes) {
             showBlockOverlay(packageName)
         }
     }
 
-    private fun hasExceededDailyLimit(): Boolean {
+    private fun getTodayUsageMinutes(): Long {
         return try {
             val prefs = getSharedPreferences(AppBlockerModule.PREFS_NAME, Context.MODE_PRIVATE)
-            val dailyLimitMinutes = prefs.getInt("daily_limit_minutes", 60)
             val blockedApps = prefs.getStringSet(AppBlockerModule.KEY_BLOCKED_APPS, emptySet()) ?: emptySet()
 
             val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
@@ -80,9 +88,9 @@ class ScrollStopAccessibilityService : AccessibilityService() {
                 }
             }
 
-            totalMinutes >= dailyLimitMinutes
+            totalMinutes
         } catch (e: Exception) {
-            false
+            0L
         }
     }
 

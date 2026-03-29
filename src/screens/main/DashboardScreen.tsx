@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,20 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../types/navigation';
 import { colors } from '../../theme/colors';
 import { ProgressRing, Icon } from '../../components/ui';
 import { useAppStore, useStatsStore, useSettingsStore, useTradeStore } from '../../stores';
 import { useTradeCheck } from '../../hooks/useTradeCheck';
 import { usageStats } from '../../services/blockingManager';
+import dayjs from 'dayjs';
+
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function DashboardScreen() {
+  const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isWide = width >= 600;
@@ -31,10 +38,31 @@ export default function DashboardScreen() {
   const solanaConnected = useTradeStore((s) => s.solanaConnected);
   const setScreenTime = useAppStore((s) => s.setScreenTime);
 
+  const dailyStats = useStatsStore((s) => s.dailyStats);
+
   const { checking, error: tradeError, checkTrades } = useTradeCheck();
   const hasTradeConnection = binanceConnected || solanaConnected;
 
   const progress = dailyLimitMinutes > 0 ? todayScreenTime / dailyLimitMinutes : 0;
+
+  // Last 7 days for graveyard preview
+  const last7Days = useMemo(() => {
+    const statsMap = new Map(dailyStats.map((s) => [s.date, s]));
+    const days: Array<{ date: string; color: string }> = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = dayjs().subtract(i, 'day').format('YYYY-MM-DD');
+      const stat = statsMap.get(d);
+      let color: string = colors.surfaceContainerLowest;
+      if (stat) {
+        if (stat.bypasses >= 2) color = '#FF4444';
+        else if (stat.bypasses >= 1) color = '#FF6B6B';
+        else if (stat.screenTimeMinutes < dailyLimitMinutes * 0.6) color = '#4ADE80';
+        else color = '#2A7A48';
+      }
+      days.push({ date: d, color });
+    }
+    return days;
+  }, [dailyStats, dailyLimitMinutes]);
 
   // Poll screen time from native UsageStats
   useEffect(() => {
@@ -146,6 +174,49 @@ export default function DashboardScreen() {
               {statusLabel}
             </Text>
           </View>
+
+          {/* Haptic Heartbeat Warning */}
+          {progress >= 0.70 && (
+            <View
+              style={[
+                styles.warningBadge,
+                {
+                  backgroundColor:
+                    progress >= 0.95
+                      ? 'rgba(255,68,68,0.15)'
+                      : progress >= 0.85
+                        ? 'rgba(255,183,123,0.15)'
+                        : 'rgba(255,183,123,0.1)',
+                  borderColor:
+                    progress >= 0.95
+                      ? 'rgba(255,68,68,0.3)'
+                      : progress >= 0.85
+                        ? 'rgba(255,183,123,0.25)'
+                        : 'rgba(255,183,123,0.15)',
+                },
+              ]}
+            >
+              <Icon
+                name="vibration"
+                size={14}
+                color={progress >= 0.95 ? '#FF4444' : colors.tertiary}
+              />
+              <Text
+                style={[
+                  styles.warningText,
+                  {
+                    color: progress >= 0.95 ? '#FF4444' : colors.tertiary,
+                  },
+                ]}
+              >
+                {progress >= 0.95
+                  ? 'CRITICAL'
+                  : progress >= 0.85
+                    ? 'Near limit'
+                    : 'Approaching limit'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Bento Grid */}
@@ -260,6 +331,30 @@ export default function DashboardScreen() {
               </View>
             </View>
           </View>
+
+          {/* Graveyard Card */}
+          <TouchableOpacity
+            style={[styles.bentoCard, styles.graveyardCard]}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Graveyard')}
+          >
+            <View style={styles.graveyardHeader}>
+              <Icon name="grid-on" size={18} color={colors.onSurfaceVariant} />
+              <Text style={styles.cardLabel}>SCROLL GRAVEYARD</Text>
+            </View>
+            <View style={styles.graveyardPreview}>
+              {last7Days.map((day) => (
+                <View
+                  key={day.date}
+                  style={[styles.graveyardDot, { backgroundColor: day.color }]}
+                />
+              ))}
+            </View>
+            <View style={styles.graveyardFooter}>
+              <Text style={styles.graveyardFooterText}>View history</Text>
+              <Icon name="chevron-right" size={18} color={colors.onSurfaceVariant} />
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -349,6 +444,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.2,
+  },
+  // Haptic warning
+  warningBadge: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 9999,
+    borderWidth: 1,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    gap: 5,
+  },
+  warningText: {
+    fontFamily: 'Inter',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
   // Bento Grid
   bentoGrid: {
@@ -518,5 +630,36 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.onSurface,
+  },
+  // Graveyard Card
+  graveyardCard: {
+    gap: 14,
+  },
+  graveyardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  graveyardPreview: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  graveyardDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 4,
+  },
+  graveyardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 2,
+  },
+  graveyardFooterText: {
+    fontFamily: 'Inter',
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.onSurfaceVariant,
   },
 });

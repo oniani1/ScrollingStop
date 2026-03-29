@@ -17,6 +17,7 @@ export const appBlocker = nativeOrMock<AppBlockerModule>(NativeAppBlocker, {
   openAccessibilitySettings: async () => {},
   updateBlockedApps: async () => {},
   setUnlockedToday: async () => {},
+  setHapticEnabled: async () => {},
 });
 
 export const usageStats = nativeOrMock<UsageStatsModule>(NativeUsageStats, {

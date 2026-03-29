@@ -58,4 +58,36 @@ export interface AppSettings {
   bypassAccessMinutes: number;
   blockedApps: BlockedApp[];
   onboardingComplete: boolean;
+  hapticHeartbeatEnabled: boolean;
+}
+
+export interface TickerPrice {
+  symbol: string;
+  price: string;
+  priceChangePercent: string;
+}
+
+export interface Warrior {
+  id: string;
+  device_code: string;
+  display_name: string;
+  created_at: string;
+}
+
+export interface WarPair {
+  id: string;
+  warrior_a: string;
+  warrior_b: string | null;
+  pair_code: string;
+  active: boolean;
+  created_at: string;
+}
+
+export interface WarEvent {
+  id: string;
+  pair_id: string;
+  warrior_id: string;
+  event_type: 'bypass_attempt' | 'bypass_complete' | 'trade_unlock' | 'streak_milestone';
+  data: Record<string, unknown>;
+  created_at: string;
 }

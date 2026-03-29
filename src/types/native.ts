@@ -3,6 +3,7 @@ export interface AppBlockerModule {
   openAccessibilitySettings(): Promise<void>;
   updateBlockedApps(packages: string[]): Promise<void>;
   setUnlockedToday(unlocked: boolean): Promise<void>;
+  setHapticEnabled(enabled: boolean): Promise<void>;
 }
 
 export interface UsageStatsModule {
