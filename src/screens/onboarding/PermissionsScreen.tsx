@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  AppState,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -24,12 +26,13 @@ import { usePermissions } from '../../hooks/usePermissions';
 type Nav = NativeStackNavigationProp<OnboardingStackParamList>;
 
 interface PermissionItem {
-  key: 'usageAccessGranted' | 'overlayPermissionGranted' | 'batteryOptExcluded';
+  key: 'usageAccessGranted' | 'overlayPermissionGranted' | 'batteryOptExcluded' | 'accessibilityEnabled';
   icon: string;
   iconColor: string;
   iconBg: string;
   title: string;
   subtitle: string;
+  required: boolean;
 }
 
 const PERMISSIONS: PermissionItem[] = [
@@ -40,6 +43,16 @@ const PERMISSIONS: PermissionItem[] = [
     iconBg: colors.primary,
     title: 'Usage Access',
     subtitle: 'See which apps you use and for how long',
+    required: true,
+  },
+  {
+    key: 'accessibilityEnabled',
+    icon: 'accessibility',
+    iconColor: '#FFFFFF',
+    iconBg: '#8B5CF6',
+    title: 'Accessibility Service',
+    subtitle: 'Detect and block apps when time is up',
+    required: true,
   },
   {
     key: 'overlayPermissionGranted',
@@ -48,6 +61,7 @@ const PERMISSIONS: PermissionItem[] = [
     iconBg: 'rgba(87,27,193,0.25)',
     title: 'Draw Over Apps',
     subtitle: 'Show the block screen when time\'s up',
+    required: true,
   },
   {
     key: 'batteryOptExcluded',
@@ -56,6 +70,7 @@ const PERMISSIONS: PermissionItem[] = [
     iconBg: colors.surfaceContainerHighest,
     title: 'Battery Optimization',
     subtitle: 'Keep monitoring running in the background',
+    required: false,
   },
 ];
 
@@ -65,21 +80,36 @@ export default function PermissionsScreen() {
     usageAccessGranted,
     overlayPermissionGranted,
     batteryOptExcluded,
+    accessibilityEnabled,
   } = useOnboardingStore();
 
-  const { requestUsageAccess, requestOverlay, requestBattery, checkAll } = usePermissions();
+  const { requestUsageAccess, requestOverlay, requestBattery, requestAccessibility, checkAll } = usePermissions();
 
   const permissionStates: Record<string, boolean> = {
     usageAccessGranted,
     overlayPermissionGranted,
     batteryOptExcluded,
+    accessibilityEnabled,
   };
 
   const requesters: Record<string, () => Promise<void>> = {
     usageAccessGranted: requestUsageAccess,
     overlayPermissionGranted: requestOverlay,
     batteryOptExcluded: requestBattery,
+    accessibilityEnabled: requestAccessibility,
   };
+
+  const allRequiredGranted = PERMISSIONS
+    .filter((p) => p.required)
+    .every((p) => permissionStates[p.key]);
+
+  // Re-check permissions when user returns from system settings
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') checkAll();
+    });
+    return () => sub.remove();
+  }, [checkAll]);
 
   return (
     <View style={styles.root}>
@@ -128,7 +158,12 @@ export default function PermissionsScreen() {
                     <Icon name={perm.icon} size={24} color={perm.iconColor} />
                   </View>
                   <View style={styles.permText}>
-                    <Text style={styles.permTitle}>{perm.title}</Text>
+                    <View style={styles.permTitleRow}>
+                      <Text style={styles.permTitle}>{perm.title}</Text>
+                      {perm.required && !granted && (
+                        <Text style={styles.requiredBadge}>Required</Text>
+                      )}
+                    </View>
                     <Text style={styles.permSub}>{perm.subtitle}</Text>
                   </View>
                   {granted ? (
@@ -157,8 +192,18 @@ export default function PermissionsScreen() {
           <PrimaryButton
             title="Continue"
             icon="arrow-forward"
-            onPress={() => navigation.navigate('SetLimits')}
+            onPress={() => {
+              if (!allRequiredGranted) {
+                Alert.alert(
+                  'Permissions Required',
+                  'Please grant all required permissions before continuing. ScrollStop needs these to track and block apps.',
+                );
+                return;
+              }
+              navigation.navigate('SetLimits');
+            }}
             fullWidth
+            disabled={!allRequiredGranted}
           />
         </View>
       </View>
@@ -242,12 +287,25 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  permTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   permTitle: {
     fontSize: 16,
     fontWeight: '700',
     fontFamily: 'Inter',
     color: colors.onSurface,
-    marginBottom: 4,
+  },
+  requiredBadge: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'Inter',
+    color: colors.error,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   permSub: {
     fontSize: 13,

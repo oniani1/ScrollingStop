@@ -34,7 +34,7 @@ export const useAppStore = create<AppStore>()(
       todayScreenTime: 0,
       unlockedAchievements: [],
 
-      completeOnboarding: () => set({ onboardingComplete: true }),
+      completeOnboarding: () => set({ onboardingComplete: true, isUnlockedToday: true }),
 
       setUnlockedToday: (unlocked) => set({ isUnlockedToday: unlocked }),
 

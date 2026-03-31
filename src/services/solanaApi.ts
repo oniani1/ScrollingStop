@@ -19,14 +19,26 @@ interface SolanaSignature {
 }
 
 async function rpcCall(method: string, params: any[]) {
-  const { data } = await axios.post(RPC_URL, {
-    jsonrpc: '2.0',
-    id: 1,
-    method,
-    params,
-  });
-  if (data.error) throw new Error(data.error.message);
-  return data.result;
+  try {
+    const { data } = await axios.post(RPC_URL, {
+      jsonrpc: '2.0',
+      id: 1,
+      method,
+      params,
+    }, { timeout: 10000 });
+    if (data.error) throw new Error(data.error.message);
+    return data.result;
+  } catch (error: any) {
+    if (error.response) {
+      throw new Error(`Solana RPC: ${error.response.data?.error?.message || error.message}`);
+    }
+    throw new Error(`Solana RPC: ${error.message}`);
+  }
+}
+
+export async function testSolanaConnection(walletAddress: string): Promise<void> {
+  const result = await rpcCall('getBalance', [walletAddress]);
+  if (result?.value === undefined) throw new Error('Invalid wallet address');
 }
 
 export async function getRecentSignatures(walletAddress: string, limit: number = 20): Promise<SolanaSignature[]> {

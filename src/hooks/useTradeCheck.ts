@@ -20,6 +20,11 @@ export function useTradeCheck() {
       const tradeState = useTradeStore.getState();
       const settingsState = useSettingsStore.getState();
 
+      if (!tradeState.binanceConnected && !tradeState.solanaConnected) {
+        setError('No trading connections configured. Connect Binance or Solana in Settings first.');
+        return;
+      }
+
       const result = await verifyTrades(
         tradeState.binanceConnected ? tradeState.binanceApiKey : undefined,
         tradeState.binanceConnected ? tradeState.binanceApiSecret : undefined,

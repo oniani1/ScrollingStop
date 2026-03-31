@@ -73,7 +73,7 @@ export default function DashboardScreen() {
       } catch {}
     };
     fetchUsage();
-    const interval = setInterval(fetchUsage, 30_000);
+    const interval = setInterval(fetchUsage, 10_000);
     return () => clearInterval(interval);
   }, [setScreenTime]);
 

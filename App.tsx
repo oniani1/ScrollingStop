@@ -5,10 +5,19 @@ import { StatusBar } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useDailyReset } from './src/hooks/useDailyReset';
 import { checkAchievements } from './src/services/achievementEngine';
-import { useAppStore, useStatsStore, useTradeStore } from './src/stores';
+import { useAppStore, useStatsStore, useTradeStore, useSettingsStore } from './src/stores';
+import { appBlocker } from './src/services/blockingManager';
 
 function AppInner() {
   useDailyReset();
+
+  // Sync settings to native on app start
+  useEffect(() => {
+    const settings = useSettingsStore.getState();
+    const packages = settings.blockedApps.filter((a) => a.enabled).map((a) => a.packageName);
+    appBlocker.updateBlockedApps(packages).catch(() => {});
+    appBlocker.setDailyLimit(settings.dailyLimitMinutes).catch(() => {});
+  }, []);
 
   // Run achievement checks whenever relevant state changes
   const totalProfit = useAppStore((s) => s.totalProfit);

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- White background -->
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+
+  <!-- Shield - big but shaped so the top V-notch and bottom point are visible -->
+  <path
+    d="M 512 52
+       L 952 192
+       L 952 520
+       C 952 770 760 940 512 1000
+       C 264 940 72 770 72 520
+       L 72 192
+       Z"
+    fill="#4F8CFF"
+  />
+
+  <!-- Darker bottom half for 3D depth -->
+  <path
+    d="M 72 520
+       C 72 770 264 940 512 1000
+       C 760 940 952 770 952 520
+       L 952 520 72 520 Z"
+    fill="#3D7AE8"
+  />
+
+  <!-- Top highlight edge -->
+  <path
+    d="M 512 52
+       L 952 192
+       L 952 340
+       L 512 200
+       L 72 340
+       L 72 192
+       Z"
+    fill="#5E9BFF"
+  />
+
+  <!-- Pause bars -->
+  <rect x="388" y="290" width="86" height="350" rx="16" fill="#FFFFFF"/>
+  <rect x="550" y="290" width="86" height="350" rx="16" fill="#FFFFFF"/>
+
+  <!-- Diagonal slash -->
+  <line x1="320" y1="670" x2="704" y2="260" stroke="#4F8CFF" stroke-width="68" stroke-linecap="round"/>
+  <line x1="320" y1="670" x2="704" y2="260" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round"/>
+</svg>

@@ -27,21 +27,41 @@ function createSignedParams(apiKey: string, apiSecret: string, params: Record<st
 }
 
 export async function getSpotTrades(apiKey: string, apiSecret: string, symbol: string = 'BTCUSDT'): Promise<BinanceTrade[]> {
-  const { queryString, headers } = createSignedParams(apiKey, apiSecret, {
-    symbol,
-    limit: '50',
-  });
-  const { data } = await axios.get(`${SPOT_BASE}/api/v3/myTrades?${queryString}`, { headers });
-  return data;
+  try {
+    const { queryString, headers } = createSignedParams(apiKey, apiSecret, {
+      symbol,
+      limit: '50',
+    });
+    const { data } = await axios.get(`${SPOT_BASE}/api/v3/myTrades?${queryString}`, { headers, timeout: 10000 });
+    return data;
+  } catch (error: any) {
+    const msg = error.response?.data?.msg || error.message || 'Binance spot API request failed';
+    throw new Error(`Binance Spot: ${msg}`);
+  }
 }
 
 export async function getFuturesTrades(apiKey: string, apiSecret: string, symbol: string = 'BTCUSDT'): Promise<BinanceTrade[]> {
-  const { queryString, headers } = createSignedParams(apiKey, apiSecret, {
-    symbol,
-    limit: '50',
-  });
-  const { data } = await axios.get(`${FUTURES_BASE}/fapi/v1/userTrades?${queryString}`, { headers });
-  return data;
+  try {
+    const { queryString, headers } = createSignedParams(apiKey, apiSecret, {
+      symbol,
+      limit: '50',
+    });
+    const { data } = await axios.get(`${FUTURES_BASE}/fapi/v1/userTrades?${queryString}`, { headers, timeout: 10000 });
+    return data;
+  } catch (error: any) {
+    const msg = error.response?.data?.msg || error.message || 'Binance futures API request failed';
+    throw new Error(`Binance Futures: ${msg}`);
+  }
+}
+
+export async function testBinanceConnection(apiKey: string, apiSecret: string): Promise<void> {
+  try {
+    const { queryString, headers } = createSignedParams(apiKey, apiSecret, {});
+    await axios.get(`${SPOT_BASE}/api/v3/account?${queryString}`, { headers, timeout: 10000 });
+  } catch (error: any) {
+    const msg = error.response?.data?.msg || error.message || 'Connection failed';
+    throw new Error(msg);
+  }
 }
 
 // Calculate P&L from spot trades (simplified: looks at buy/sell pairs)

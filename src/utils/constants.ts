@@ -1,31 +1,6 @@
 import type { BlockedApp } from '../types/models';
 
-export const DEFAULT_BLOCKED_APPS: BlockedApp[] = [
-  {
-    packageName: 'com.instagram.android',
-    displayName: 'Instagram',
-    icon: 'camera-enhance',
-    enabled: true,
-  },
-  {
-    packageName: 'com.zhiliaoapp.musically',
-    displayName: 'TikTok',
-    icon: 'music-note',
-    enabled: true,
-  },
-  {
-    packageName: 'com.google.android.youtube',
-    displayName: 'YouTube',
-    icon: 'video-library',
-    enabled: true,
-  },
-  {
-    packageName: 'com.twitter.android',
-    displayName: 'Twitter/X',
-    icon: 'tag',
-    enabled: true,
-  },
-];
+export const DEFAULT_BLOCKED_APPS: BlockedApp[] = [];
 
 export const DEFAULT_SETTINGS = {
   dailyLimitMinutes: 60,

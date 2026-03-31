@@ -12,6 +12,7 @@ import BypassModal from '../screens/modals/BypassModal';
 import ShameReceiptModal from '../screens/modals/ShameReceiptModal';
 import GraveyardScreen from '../screens/main/GraveyardScreen';
 import WarModeScreen from '../screens/main/WarModeScreen';
+import TradingSetupScreen from '../screens/onboarding/TradingSetupScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -84,6 +85,14 @@ export default function RootNavigator() {
         component={WarModeScreen}
         options={{
           animation: 'slide_from_right',
+        }}
+      />
+      <Stack.Screen
+        name="TradingSetup"
+        component={TradingSetupScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
     </Stack.Navigator>

@@ -73,6 +73,17 @@ class AppBlockerModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
+    fun setDailyLimit(minutes: Int, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putInt("daily_limit_minutes", minutes).apply()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_SET_LIMIT", e.message)
+        }
+    }
+
+    @ReactMethod
     fun setUnlockedToday(unlocked: Boolean, promise: Promise) {
         try {
             val prefs = reactContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         android:maxSdkVersion="2147483647"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <application
       android:name=".MainApplication"

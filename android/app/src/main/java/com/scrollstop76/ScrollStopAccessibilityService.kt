@@ -5,14 +5,18 @@ import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import java.util.Calendar
 
 class ScrollStopAccessibilityService : AccessibilityService() {
 
-    private var lastCheckedPackage: String? = null
+    private var currentForegroundPackage: String? = null
     private var hapticManager: HapticManager? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private var checkRunnable: Runnable? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -23,6 +27,20 @@ class ScrollStopAccessibilityService : AccessibilityService() {
             flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS
             notificationTimeout = 300
         }
+        startPeriodicCheck()
+    }
+
+    private fun startPeriodicCheck() {
+        checkRunnable = object : Runnable {
+            override fun run() {
+                val pkg = currentForegroundPackage
+                if (pkg != null && pkg != packageName) {
+                    checkAndBlock(pkg)
+                }
+                handler.postDelayed(this, 10_000)
+            }
+        }
+        handler.postDelayed(checkRunnable!!, 10_000)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -30,32 +48,30 @@ class ScrollStopAccessibilityService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
 
-        // Don't re-check the same package consecutively
-        if (packageName == lastCheckedPackage) return
-        lastCheckedPackage = packageName
-
         // Skip system UI and our own app
         if (packageName == this.packageName ||
             packageName == "com.android.systemui" ||
-            packageName == "com.android.launcher" ||
             packageName.startsWith("com.android.launcher")) {
+            currentForegroundPackage = null
             return
         }
 
+        currentForegroundPackage = packageName
+        checkAndBlock(packageName)
+    }
+
+    private fun checkAndBlock(packageName: String) {
         val prefs = getSharedPreferences(AppBlockerModule.PREFS_NAME, Context.MODE_PRIVATE)
         val blockedApps = prefs.getStringSet(AppBlockerModule.KEY_BLOCKED_APPS, emptySet()) ?: emptySet()
         val isUnlocked = prefs.getBoolean(AppBlockerModule.KEY_UNLOCKED_TODAY, false)
 
-        // Only process if the app is in blocked list and user hasn't unlocked today
         if (!blockedApps.contains(packageName) || isUnlocked) return
 
         val usageMinutes = getTodayUsageMinutes()
 
-        // Haptic heartbeat — vibrate as user approaches limit
         hapticManager?.checkAndVibrate(usageMinutes)
 
-        val prefs2 = getSharedPreferences(AppBlockerModule.PREFS_NAME, Context.MODE_PRIVATE)
-        val dailyLimitMinutes = prefs2.getInt("daily_limit_minutes", 60)
+        val dailyLimitMinutes = prefs.getInt("daily_limit_minutes", 60)
 
         if (usageMinutes >= dailyLimitMinutes) {
             showBlockOverlay(packageName)
@@ -104,11 +120,12 @@ class ScrollStopAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        lastCheckedPackage = null
+        currentForegroundPackage = null
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        lastCheckedPackage = null
+        checkRunnable?.let { handler.removeCallbacks(it) }
+        currentForegroundPackage = null
     }
 }

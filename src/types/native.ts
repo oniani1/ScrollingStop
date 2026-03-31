@@ -2,6 +2,7 @@ export interface AppBlockerModule {
   isAccessibilityServiceEnabled(): Promise<boolean>;
   openAccessibilitySettings(): Promise<void>;
   updateBlockedApps(packages: string[]): Promise<void>;
+  setDailyLimit(minutes: number): Promise<void>;
   setUnlockedToday(unlocked: boolean): Promise<void>;
   setHapticEnabled(enabled: boolean): Promise<void>;
 }

@@ -7,7 +7,12 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '../../types/navigation';
@@ -18,12 +23,16 @@ import {
   StepIndicator,
   Icon,
 } from '../../components/ui';
-import { useAppStore, useTradeStore } from '../../stores';
+import { useAppStore, useTradeStore, useSettingsStore } from '../../stores';
+import { testBinanceConnection } from '../../services/binanceApi';
+import { testSolanaConnection } from '../../services/solanaApi';
+import { appBlocker } from '../../services/blockingManager';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList>;
 
 export default function TradingSetupScreen() {
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
   const completeOnboarding = useAppStore((s) => s.completeOnboarding);
   const {
     binanceConnected,
@@ -37,98 +46,109 @@ export default function TradingSetupScreen() {
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
+  const [binanceLoading, setBinanceLoading] = useState(false);
+  const [solanaLoading, setSolanaLoading] = useState(false);
 
   const handleFinish = () => {
+    const settings = useSettingsStore.getState();
+    const packages = settings.blockedApps.filter((a) => a.enabled).map((a) => a.packageName);
+    appBlocker.updateBlockedApps(packages).catch(() => {});
+    appBlocker.setDailyLimit(settings.dailyLimitMinutes).catch(() => {});
+    appBlocker.setUnlockedToday(true).catch(() => {});
     completeOnboarding();
   };
 
-  const handleBinanceConnect = () => {
-    if (apiKey.trim() && apiSecret.trim()) {
-      connectBinance(apiKey.trim(), apiSecret.trim());
+  const handleBinanceConnect = async () => {
+    const key = apiKey.trim();
+    const secret = apiSecret.trim();
+    if (!key || !secret) return;
+    setBinanceLoading(true);
+    try {
+      await testBinanceConnection(key, secret);
+      connectBinance(key, secret);
       setBinanceExpanded(false);
+    } catch (error: any) {
+      Alert.alert('Connection Failed', error.message || 'Invalid API key or secret.');
+    } finally {
+      setBinanceLoading(false);
     }
   };
 
-  const handleSolanaConnect = () => {
-    if (walletAddress.trim()) {
-      connectSolana(walletAddress.trim());
+  const handleSolanaConnect = async () => {
+    const addr = walletAddress.trim();
+    if (!addr) return;
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr)) {
+      Alert.alert('Invalid Address', 'Please enter a valid Solana wallet address.');
+      return;
+    }
+    setSolanaLoading(true);
+    try {
+      await testSolanaConnection(addr);
+      connectSolana(addr);
       setSolanaExpanded(false);
+    } catch (error: any) {
+      Alert.alert('Connection Failed', error.message || 'Could not verify wallet.');
+    } finally {
+      setSolanaLoading(false);
     }
   };
 
   return (
-    <View style={styles.root}>
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
-      {/* Subtle purple glow */}
-      <View style={styles.glowOuter}>
-        <View style={styles.glowInner} />
-      </View>
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-          activeOpacity={0.7}
-        >
-          <Icon name="arrow-back" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        <View style={styles.headerSpacer} />
-        <View style={styles.headerSpacer} />
-      </View>
-
-      {/* Step indicator */}
-      <View style={styles.stepRow}>
-        <StepIndicator totalSteps={4} currentStep={2} />
-      </View>
-      <Text style={styles.stepLabel}>Step 3 of 4</Text>
-
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>Connect Your Trading</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
+            <Icon name="arrow-back" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Step indicator */}
+        <View style={styles.stepRow}>
+          <StepIndicator totalSteps={4} currentStep={2} />
+        </View>
+        <Text style={styles.stepLabel}>Step 3 of 4</Text>
+
+        <Text style={styles.title}>Connect Your{'\n'}Trading</Text>
         <Text style={styles.subtitle}>
-          Link your exchange to verify trades. Both are optional.
+          Link your exchange to verify trades and unlock screen time. Both are optional — you can always connect later in Settings.
         </Text>
 
         {/* Binance card */}
-        <GlassCard style={styles.integrationCard}>
-          <View style={styles.integrationRow}>
-            <View style={styles.avatarCircle}>
-              <Icon name="account-balance-wallet" size={24} color={colors.primary} />
+        <GlassCard style={styles.card}>
+          <TouchableOpacity
+            style={styles.cardHeader}
+            activeOpacity={0.7}
+            onPress={() => !binanceConnected && setBinanceExpanded(!binanceExpanded)}
+            disabled={binanceConnected}
+          >
+            <View style={styles.cardIconBox}>
+              <Icon name="account-balance-wallet" size={22} color={colors.primary} />
             </View>
-            <View style={styles.integrationText}>
-              <Text style={styles.integrationTitle}>Binance</Text>
-              <Text style={styles.integrationStatus}>
-                {binanceConnected ? 'Connected' : 'Not connected'}
-              </Text>
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardTitle}>Binance</Text>
+              <Text style={styles.cardSub}>Spot & Futures P&L tracking</Text>
             </View>
             {binanceConnected ? (
-              <View style={styles.connectedBadge}>
-                <Icon name="check-circle" size={20} color={colors.success} />
-              </View>
+              <Icon name="check-circle" size={24} color={colors.success} />
             ) : (
-              <TouchableOpacity
-                style={styles.connectPill}
-                onPress={() => setBinanceExpanded(!binanceExpanded)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.connectPillText}>Connect</Text>
-              </TouchableOpacity>
+              <Icon name={binanceExpanded ? 'expand-less' : 'expand-more'} size={24} color={colors.onSurfaceVariant} />
             )}
-          </View>
-
-          <View style={styles.infoLine}>
-            <Icon name="info-outline" size={14} color={colors.onSurfaceVariant} />
-            <Text style={styles.infoLineText}>Read-only API keys for safety</Text>
-          </View>
+          </TouchableOpacity>
 
           {binanceExpanded && !binanceConnected && (
-            <View style={styles.expandedForm}>
+            <View style={styles.formArea}>
               <TextInput
-                style={styles.textInput}
+                style={styles.input}
                 placeholder="API Key"
                 placeholderTextColor={colors.outlineVariant}
                 value={apiKey}
@@ -137,7 +157,7 @@ export default function TradingSetupScreen() {
                 autoCorrect={false}
               />
               <TextInput
-                style={styles.textInput}
+                style={styles.input}
                 placeholder="API Secret"
                 placeholderTextColor={colors.outlineVariant}
                 value={apiSecret}
@@ -146,57 +166,48 @@ export default function TradingSetupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              <View style={styles.formHint}>
+                <Icon name="info-outline" size={13} color={colors.onSurfaceVariant} />
+                <Text style={styles.formHintText}>Use read-only API keys for safety</Text>
+              </View>
               <TouchableOpacity
-                style={[
-                  styles.submitBtn,
-                  (!apiKey.trim() || !apiSecret.trim()) && styles.submitBtnDisabled,
-                ]}
+                style={[styles.saveBtn, (!apiKey.trim() || !apiSecret.trim() || binanceLoading) && styles.saveBtnDisabled]}
                 onPress={handleBinanceConnect}
-                disabled={!apiKey.trim() || !apiSecret.trim()}
+                disabled={!apiKey.trim() || !apiSecret.trim() || binanceLoading}
                 activeOpacity={0.7}
               >
-                <Text style={styles.submitBtnText}>Save</Text>
+                {binanceLoading ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveBtnText}>Connect Binance</Text>}
               </TouchableOpacity>
             </View>
           )}
         </GlassCard>
 
-        {/* Solana Wallet card */}
-        <GlassCard style={styles.integrationCard}>
-          <View style={styles.integrationRow}>
-            <View style={[styles.avatarCircle, { backgroundColor: 'rgba(208,188,255,0.15)' }]}>
-              <Icon name="account-balance-wallet" size={24} color="#d0bcff" />
+        {/* Solana card */}
+        <GlassCard style={styles.card}>
+          <TouchableOpacity
+            style={styles.cardHeader}
+            activeOpacity={0.7}
+            onPress={() => !solanaConnected && setSolanaExpanded(!solanaExpanded)}
+            disabled={solanaConnected}
+          >
+            <View style={[styles.cardIconBox, { backgroundColor: 'rgba(208,188,255,0.15)' }]}>
+              <Icon name="account-balance-wallet" size={22} color="#d0bcff" />
             </View>
-            <View style={styles.integrationText}>
-              <Text style={styles.integrationTitle}>Solana Wallet</Text>
-              <Text style={styles.integrationStatus}>
-                {solanaConnected ? 'Connected' : 'Not connected'}
-              </Text>
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardTitle}>Solana Wallet</Text>
+              <Text style={styles.cardSub}>On-chain swap P&L</Text>
             </View>
             {solanaConnected ? (
-              <View style={styles.connectedBadge}>
-                <Icon name="check-circle" size={20} color={colors.success} />
-              </View>
+              <Icon name="check-circle" size={24} color={colors.success} />
             ) : (
-              <TouchableOpacity
-                style={styles.connectPill}
-                onPress={() => setSolanaExpanded(!solanaExpanded)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.connectPillText}>Connect</Text>
-              </TouchableOpacity>
+              <Icon name={solanaExpanded ? 'expand-less' : 'expand-more'} size={24} color={colors.onSurfaceVariant} />
             )}
-          </View>
-
-          <View style={styles.infoLine}>
-            <Icon name="info-outline" size={14} color={colors.onSurfaceVariant} />
-            <Text style={styles.infoLineText}>Works with Phantom wallet</Text>
-          </View>
+          </TouchableOpacity>
 
           {solanaExpanded && !solanaConnected && (
-            <View style={styles.expandedForm}>
+            <View style={styles.formArea}>
               <TextInput
-                style={styles.textInput}
+                style={styles.input}
                 placeholder="Wallet address"
                 placeholderTextColor={colors.outlineVariant}
                 value={walletAddress}
@@ -204,44 +215,31 @@ export default function TradingSetupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              <View style={styles.formHint}>
+                <Icon name="info-outline" size={13} color={colors.onSurfaceVariant} />
+                <Text style={styles.formHintText}>Works with Phantom, Solflare, etc.</Text>
+              </View>
               <TouchableOpacity
-                style={[
-                  styles.submitBtn,
-                  !walletAddress.trim() && styles.submitBtnDisabled,
-                ]}
+                style={[styles.saveBtn, (!walletAddress.trim() || solanaLoading) && styles.saveBtnDisabled]}
                 onPress={handleSolanaConnect}
-                disabled={!walletAddress.trim()}
+                disabled={!walletAddress.trim() || solanaLoading}
                 activeOpacity={0.7}
               >
-                <Text style={styles.submitBtnText}>Save</Text>
+                {solanaLoading ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.saveBtnText}>Connect Wallet</Text>}
               </TouchableOpacity>
             </View>
           )}
         </GlassCard>
-      </ScrollView>
 
-      {/* Bottom */}
-      <View style={styles.bottomArea}>
-        <View style={styles.gradientFade} />
-        <View style={styles.bottomInner}>
-          <Text style={styles.bottomHint}>
-            You can skip this and connect later in Settings
-          </Text>
-          <PrimaryButton
-            title="Continue"
-            onPress={handleFinish}
-            fullWidth
-          />
-          <TouchableOpacity
-            onPress={handleFinish}
-            style={styles.skipBtn}
-            activeOpacity={0.7}
-          >
+        {/* Bottom actions — inside scroll */}
+        <View style={styles.bottomSection}>
+          <PrimaryButton title="Continue" onPress={handleFinish} fullWidth />
+          <TouchableOpacity onPress={handleFinish} style={styles.skipBtn} activeOpacity={0.7}>
             <Text style={styles.skipText}>Skip for now</Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -250,41 +248,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  glowOuter: {
-    position: 'absolute',
-    top: '35%',
-    alignSelf: 'center',
-    width: 350,
-    height: 350,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glowInner: {
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    backgroundColor: '#571bc1',
-    opacity: 0.05,
+  scrollContent: {
+    paddingHorizontal: 24,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 8,
+    marginBottom: 8,
   },
   backBtn: {
     padding: 8,
-  },
-  headerSpacer: {
-    width: 40,
+    marginLeft: -8,
   },
   stepRow: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 8,
     alignItems: 'center',
+    marginBottom: 8,
   },
   stepLabel: {
     fontSize: 10,
@@ -294,147 +272,110 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.onSurfaceVariant,
     textAlign: 'center',
-    marginBottom: 16,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 200,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '800',
     fontFamily: 'Inter',
     color: colors.onSurface,
     letterSpacing: -0.5,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter',
     color: colors.onSurfaceVariant,
-    lineHeight: 24,
-    marginBottom: 32,
+    lineHeight: 22,
+    marginBottom: 28,
   },
-  integrationCard: {
-    padding: 20,
-    marginBottom: 16,
+  card: {
+    padding: 0,
+    marginBottom: 14,
+    overflow: 'hidden',
   },
-  integrationRow: {
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 18,
+    gap: 14,
   },
-  avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  cardIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: 'rgba(79,140,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
   },
-  integrationText: {
+  cardInfo: {
     flex: 1,
   },
-  integrationTitle: {
+  cardTitle: {
     fontSize: 16,
     fontWeight: '700',
     fontFamily: 'Inter',
     color: colors.onSurface,
     marginBottom: 2,
   },
-  integrationStatus: {
+  cardSub: {
     fontSize: 13,
     fontFamily: 'Inter',
     color: colors.onSurfaceVariant,
   },
-  connectedBadge: {
-    padding: 4,
+  formArea: {
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    gap: 10,
   },
-  connectPill: {
-    borderWidth: 1,
-    borderColor: colors.primaryContainer,
-    borderRadius: 9999,
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-  },
-  connectPillText: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Inter',
-    color: colors.primaryLight,
-  },
-  infoLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 6,
-  },
-  infoLineText: {
-    fontSize: 12,
-    fontFamily: 'Inter',
-    color: colors.onSurfaceVariant,
-  },
-  expandedForm: {
-    marginTop: 16,
-    gap: 12,
-  },
-  textInput: {
+  input: {
     backgroundColor: colors.surfaceContainer,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.outlineVariant,
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 14,
+    paddingVertical: 13,
+    fontSize: 15,
     fontFamily: 'Inter',
     color: colors.onSurface,
   },
-  submitBtn: {
+  formHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  formHintText: {
+    fontSize: 12,
+    fontFamily: 'Inter',
+    color: colors.onSurfaceVariant,
+  },
+  saveBtn: {
     backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 4,
   },
-  submitBtnDisabled: {
+  saveBtnDisabled: {
     opacity: 0.4,
   },
-  submitBtnText: {
-    fontSize: 14,
+  saveBtnText: {
+    fontSize: 15,
     fontWeight: '700',
     fontFamily: 'Inter',
     color: '#FFFFFF',
   },
-  bottomArea: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  gradientFade: {
-    height: 40,
-    backgroundColor: colors.background,
-    opacity: 0.85,
-  },
-  bottomInner: {
-    backgroundColor: colors.background,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    paddingTop: 4,
+  bottomSection: {
+    marginTop: 24,
     alignItems: 'center',
-  },
-  bottomHint: {
-    fontSize: 12,
-    fontFamily: 'Inter',
-    color: colors.onSurfaceVariant,
-    textAlign: 'center',
-    marginBottom: 16,
+    paddingBottom: 16,
   },
   skipBtn: {
-    marginTop: 12,
+    marginTop: 16,
     paddingVertical: 8,
   },
   skipText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     fontFamily: 'Inter',
     color: '#d0bcff',

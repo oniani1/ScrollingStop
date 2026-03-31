@@ -28,4 +28,5 @@ export type RootStackParamList = {
   };
   Graveyard: undefined;
   WarMode: undefined;
+  TradingSetup: undefined;
 };

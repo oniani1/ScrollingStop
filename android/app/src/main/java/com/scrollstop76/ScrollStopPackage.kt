@@ -11,7 +11,8 @@ class ScrollStopPackage : ReactPackage {
             AppBlockerModule(reactContext),
             UsageStatsModule(reactContext),
             OverlayModule(reactContext),
-            BatteryOptModule(reactContext)
+            BatteryOptModule(reactContext),
+            InstalledAppsModule(reactContext)
         )
     }
 

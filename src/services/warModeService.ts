@@ -2,6 +2,11 @@ import { supabase } from '../config/supabase';
 import type { Warrior, WarPair, WarEvent } from '../types/models';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
+function ensureSupabase() {
+  if (!supabase) throw new Error('Supabase is not configured. Set your project credentials in src/config/supabase.ts');
+  return supabase;
+}
+
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -14,8 +19,9 @@ function generateUUID(): string {
 }
 
 export async function registerWarrior(displayName: string): Promise<Warrior | null> {
+  const sb = ensureSupabase();
   const deviceCode = generateUUID();
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('warriors')
     .insert({ device_code: deviceCode, display_name: displayName })
     .select()
@@ -29,8 +35,9 @@ export async function registerWarrior(displayName: string): Promise<Warrior | nu
 }
 
 export async function createWarPair(warriorId: string): Promise<{ pairCode: string; pairId: string } | null> {
+  const sb = ensureSupabase();
   const pairCode = generateCode();
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('war_pairs')
     .insert({
       warrior_a: warriorId,
@@ -51,8 +58,9 @@ export async function joinWarPair(
   pairCode: string,
   warriorId: string,
 ): Promise<WarPair | null> {
+  const sb = ensureSupabase();
   // Find the pair
-  const { data: pair, error: findError } = await supabase
+  const { data: pair, error: findError } = await sb
     .from('war_pairs')
     .select('*')
     .eq('pair_code', pairCode)
@@ -66,7 +74,7 @@ export async function joinWarPair(
   }
 
   // Join it
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('war_pairs')
     .update({ warrior_b: warriorId })
     .eq('id', pair.id)
@@ -81,7 +89,8 @@ export async function joinWarPair(
 }
 
 export async function leavePair(pairId: string): Promise<boolean> {
-  const { error } = await supabase
+  const sb = ensureSupabase();
+  const { error } = await sb
     .from('war_pairs')
     .update({ active: false })
     .eq('id', pairId);
@@ -99,7 +108,8 @@ export async function sendWarEvent(
   eventType: WarEvent['event_type'],
   data: Record<string, unknown> = {},
 ): Promise<void> {
-  const { error } = await supabase
+  const sb = ensureSupabase();
+  const { error } = await sb
     .from('war_events')
     .insert({ pair_id: pairId, warrior_id: warriorId, event_type: eventType, data });
 
@@ -111,7 +121,8 @@ export async function getPartnerEvents(
   partnerId: string,
   limit = 20,
 ): Promise<WarEvent[]> {
-  const { data, error } = await supabase
+  const sb = ensureSupabase();
+  const { data, error } = await sb
     .from('war_events')
     .select('*')
     .eq('pair_id', pairId)
@@ -127,7 +138,8 @@ export async function getPartnerEvents(
 }
 
 export async function getPartnerName(partnerId: string): Promise<string | null> {
-  const { data, error } = await supabase
+  const sb = ensureSupabase();
+  const { data, error } = await sb
     .from('warriors')
     .select('display_name')
     .eq('id', partnerId)
@@ -140,7 +152,8 @@ export async function getPartnerName(partnerId: string): Promise<string | null> 
 export function subscribeToEvents(
   pairId: string,
   callback: (event: WarEvent) => void,
-): RealtimeChannel {
+): RealtimeChannel | null {
+  if (!supabase) return null;
   return supabase
     .channel(`war_events:${pairId}`)
     .on(

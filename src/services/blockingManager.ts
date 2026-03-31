@@ -16,6 +16,7 @@ export const appBlocker = nativeOrMock<AppBlockerModule>(NativeAppBlocker, {
   isAccessibilityServiceEnabled: async () => false,
   openAccessibilitySettings: async () => {},
   updateBlockedApps: async () => {},
+  setDailyLimit: async () => {},
   setUnlockedToday: async () => {},
   setHapticEnabled: async () => {},
 });
